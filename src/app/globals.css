@@ -1,8 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
+  /* Brand Primary */
+  --color-trust-blue: #2563EB;
+  --color-vault-indigo: #4338CA;
+  --color-primary: #2563EB;
+  --color-primary-dark: #4338CA;
+
+  /* Brand Accent */
+  --color-gold: #F59E0B;
+  --color-success: #16A34A;
+  --color-alert: #DC2626;
+
+  /* Neutral System */
+  --color-slate-50: #F8FAFC;
+  --color-slate-100: #F1F5F9;
+  --color-slate-200: #E2E8F0;
+  --color-slate-500: #64748B;
+  --color-slate-900: #0F172A;
+
+  /* Brand Gradient */
+  --brand-gradient: linear-gradient(135deg, #2563EB, #4338CA);
 }
 
 html {
@@ -10,9 +28,9 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
-  background-color: #f8fafc;
+  background-color: var(--color-slate-50);
 }
 
 /* Safe area for bottom nav */
@@ -32,6 +50,18 @@ body {
 /* Smooth transitions */
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Brand gradient utility */
+.bg-brand-gradient {
+  background: var(--brand-gradient);
+}
+
+.text-brand-gradient {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Input focus styles */

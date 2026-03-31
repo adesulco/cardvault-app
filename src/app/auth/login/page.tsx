@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -113,11 +114,9 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] px-6">
       {/* Logo */}
-      <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center mb-6">
-        <span className="text-white font-bold text-2xl">CV</span>
-      </div>
-      <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-      <p className="text-sm text-gray-500 mt-1">Sign in to your CardVault account</p>
+      <BrandLogo size={64} className="mb-6" />
+      <h1 className="text-2xl font-bold text-slate-900">Welcome Back</h1>
+      <p className="text-sm text-slate-500 mt-1">Sign in to your CardVault account</p>
 
       {error && (
         <div className="w-full mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">

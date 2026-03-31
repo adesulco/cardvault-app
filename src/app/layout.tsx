@@ -5,7 +5,7 @@ import BottomNav from '@/components/BottomNav';
 
 export const metadata: Metadata = {
   title: 'CardVault - Secure Trading Card Marketplace',
-  description: 'Buy, sell, and trade collectible cards with escrow protection. IDR & USD supported.',
+  description: 'Trade with confidence. Your cards, your money — protected. Buy, sell, and trade collectible cards with escrow protection.',
   manifest: '/manifest.json',
 };
 
@@ -14,13 +14,19 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#2563eb',
+  themeColor: '#2563EB',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-gray-50 text-gray-900 antialiased">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-slate-50 text-slate-900 antialiased">
         <Header />
         <main className="pt-14 pb-20 min-h-screen max-w-lg mx-auto">
           {children}
