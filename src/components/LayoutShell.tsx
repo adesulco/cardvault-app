@@ -6,8 +6,9 @@ import BottomNav from '@/components/BottomNav';
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
+  const isGate = pathname.startsWith('/gate');
 
-  if (isAdmin) {
+  if (isAdmin || isGate) {
     // Admin pages render without Header/BottomNav — admin layout handles its own shell
     return <>{children}</>;
   }
