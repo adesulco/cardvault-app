@@ -59,3 +59,4 @@ src/
 prisma/
 └── schema.prisma         # Database schema (15 models)
 ```
+
