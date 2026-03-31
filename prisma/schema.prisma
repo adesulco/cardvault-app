@@ -7,42 +7,65 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                String   @id @default(uuid())
-  email             String   @unique
-  passwordHash      String?
-  displayName       String?
-  avatarUrl         String?
-  bio               String?
-  location          String?
-  countryCode       String   @default("ID")
-  preferredCurrency String   @default("IDR")
-  kycStatus         String   @default("unverified") // unverified, pending, verified
-  payoutMethod      String?  // midtrans, xendit, stripe_connect, paypal
-  payoutAccountId   String?
-  trustScore        Float    @default(0)
-  totalTransactions Int      @default(0)
-  role              String   @default("user") // user, admin
-  isSuspended       Boolean  @default(false)
-  lastLogin         DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
-  cards             Card[]
-  listings          Listing[]
-  buyerTransactions Transaction[] @relation("BuyerTransactions")
-  sellerTransactions Transaction[] @relation("SellerTransactions")
-  sentOffers        Offer[]   @relation("SentOffers")
-  receivedOffers    Offer[]   @relation("ReceivedOffers")
-  reviewsGiven      Review[]  @relation("ReviewsGiven")
-  reviewsReceived   Review[]  @relation("ReviewsReceived")
-  sentMessages      Message[] @relation("SentMessages")
-  receivedMessages  Message[] @relation("ReceivedMessages")
-  disputesOpened    Dispute[] @relation("DisputesOpened")
-  disputesAssigned  Dispute[] @relation("DisputesAssigned")
-  notifications     Notification[]
-  accounts          Account[]
-  sessions          Session[]
+enum UserRole {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+model User {
+  id                   String   @id @default(uuid())
+  email                String   @unique
+  passwordHash         String?
+  displayName          String?
+  avatarUrl            String?
+  bio                  String?
+  location             String?
+  phone                String?
+  socialMedia          String?
+  countryCode          String   @default("ID")
+  preferredCurrency    String   @default("IDR")
+  kycStatus            KycStatus @default(PENDING)
+  userRole             UserRole @default(BUYER)
+  idDocumentUrl        String?
+  selfieUrl            String?
+  kycSubmittedAt       DateTime?
+  kycReviewedAt        DateTime?
+  kycReviewNote        String?
+  isEmailVerified      Boolean  @default(false)
+  emailVerificationToken String?
+  isAdmin              Boolean  @default(false)
+  payoutMethod         String?  // midtrans, xendit, stripe_connect, paypal
+  payoutAccountId      String?
+  trustScore           Float    @default(0)
+  totalTransactions    Int      @default(0)
+  role                 String   @default("user") // user, admin (deprecated, use isAdmin and userRole)
+  isSuspended          Boolean  @default(false)
+  lastLogin            DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  cards                Card[]
+  listings             Listing[]
+  buyerTransactions    Transaction[] @relation("BuyerTransactions")
+  sellerTransactions   Transaction[] @relation("SellerTransactions")
+  sentOffers           Offer[]   @relation("SentOffers")
+  receivedOffers       Offer[]   @relation("ReceivedOffers")
+  reviewsGiven         Review[]  @relation("ReviewsGiven")
+  reviewsReceived      Review[]  @relation("ReviewsReceived")
+  sentMessages         Message[] @relation("SentMessages")
+  receivedMessages     Message[] @relation("ReceivedMessages")
+  disputesOpened       Dispute[] @relation("DisputesOpened")
+  disputesAssigned     Dispute[] @relation("DisputesAssigned")
+  notifications        Notification[]
+  accounts             Account[]
+  sessions             Session[]
 }
 
 model Account {

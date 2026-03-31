@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import React from 'react';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import CardGrid from '@/components/CardGrid';
 import CategoryFilter from '@/components/CategoryFilter';
@@ -7,16 +8,7 @@ import PriceDisplay from '@/components/PriceDisplay';
 import { useAppStore } from '@/lib/store';
 import { formatIDR, formatUSD, idrToUsd, calculateFees } from '@/lib/currency';
 
-const ALL_LISTINGS = [
-  { id: '1', cardName: 'Charizard VMAX', playerOrCharacter: 'Pokémon', frontImageUrl: null, condition: 'graded' as const, grade: '10', gradingCompany: 'PSA', priceIdr: 25000000, status: 'listed_sale' as const, listingId: 'l1', seller: { displayName: 'TokyoCards', trustScore: 4.9 } },
-  { id: '2', cardName: 'Luka Doncic Prizm Silver', playerOrCharacter: 'Basketball', frontImageUrl: null, condition: 'graded' as const, grade: '9.5', gradingCompany: 'BGS', priceIdr: 15000000, status: 'listed_sale' as const, listingId: 'l2', seller: { displayName: 'HoopCards_ID', trustScore: 4.7 } },
-  { id: '3', cardName: 'Blue-Eyes White Dragon', playerOrCharacter: 'Yu-Gi-Oh!', frontImageUrl: null, condition: 'graded' as const, grade: '8', gradingCompany: 'CGC', priceIdr: 8500000, status: 'listed_sale' as const, listingId: 'l3', seller: { displayName: 'DuelMaster', trustScore: 4.5 } },
-  { id: '4', cardName: 'Mike Trout Topps Chrome RC', playerOrCharacter: 'Baseball', frontImageUrl: null, condition: 'raw' as const, grade: null, gradingCompany: null, priceIdr: 5000000, status: 'listed_sale' as const, listingId: 'l4', seller: { displayName: 'CardCollectorJKT', trustScore: 4.8 } },
-  { id: '5', cardName: 'Black Lotus', playerOrCharacter: 'Magic: The Gathering', frontImageUrl: null, condition: 'graded' as const, grade: '7', gradingCompany: 'PSA', priceIdr: 150000000, status: 'listed_sale' as const, listingId: 'l5', seller: { displayName: 'VintageMTG', trustScore: 5.0 } },
-  { id: '6', cardName: 'Pikachu Illustrator', playerOrCharacter: 'Pokémon', frontImageUrl: null, condition: 'graded' as const, grade: '9', gradingCompany: 'PSA', priceIdr: 75000000, status: 'listed_sale' as const, listingId: 'l6', seller: { displayName: 'RareFinds', trustScore: 4.6 } },
-  { id: '7', cardName: 'LeBron James Rookie', playerOrCharacter: 'Basketball', frontImageUrl: null, condition: 'graded' as const, grade: '9', gradingCompany: 'PSA', priceIdr: 45000000, status: 'listed_sale' as const, listingId: 'l7', seller: { displayName: 'SlamDunkCards', trustScore: 4.4 } },
-  { id: '8', cardName: 'Mewtwo GX Rainbow', playerOrCharacter: 'Pokémon', frontImageUrl: null, condition: 'graded' as const, grade: '10', gradingCompany: 'CGC', priceIdr: 12000000, status: 'listed_sale' as const, listingId: 'l8', seller: { displayName: 'PKMNHub', trustScore: 4.3 } },
-];
+// Listings are now fetched from API - no demo data
 
 export default function MarketplacePage() {
   const [search, setSearch] = useState('');
@@ -24,6 +16,24 @@ export default function MarketplacePage() {
   const [sortBy, setSortBy] = useState<'newest' | 'price_asc' | 'price_desc' | 'popular'>('newest');
   const [showFilters, setShowFilters] = useState(false);
   const { preferredCurrency } = useAppStore();
+  const [listings, setListings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch listings from API on mount
+  React.useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        // TODO: Replace with actual API call once implemented
+        setListings([]);
+      } catch (error) {
+        console.error('Failed to fetch listings:', error);
+        setListings([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchListings();
+  }, []);
 
   const catMap: Record<string, string> = {
     pokemon: 'Pokémon', basketball: 'Basketball', baseball: 'Baseball',
@@ -31,7 +41,7 @@ export default function MarketplacePage() {
     football: 'Football', hockey: 'Hockey',
   };
 
-  let filtered = ALL_LISTINGS.filter(c => {
+  let filtered = listings.filter(c => {
     const matchesSearch = !search ||
       c.cardName.toLowerCase().includes(search.toLowerCase()) ||
       (c.playerOrCharacter && c.playerOrCharacter.toLowerCase().includes(search.toLowerCase()));
@@ -121,8 +131,19 @@ export default function MarketplacePage() {
         <p className="text-xs text-gray-500">{filtered.length} cards found</p>
       </div>
 
-      {/* Grid */}
-      <CardGrid cards={filtered} />
+      {/* Grid or Empty State */}
+      {loading ? (
+        <div className="px-4 py-12 text-center">
+          <p className="text-sm text-gray-500">Loading listings...</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="px-4 py-12 text-center">
+          <p className="text-sm font-medium text-gray-900 mb-1">No listings yet</p>
+          <p className="text-xs text-gray-500">Be the first to list a card on CardVault!</p>
+        </div>
+      ) : (
+        <CardGrid cards={filtered} />
+      )}
     </div>
   );
 }

@@ -1,33 +1,37 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import EscrowBadge from '@/components/EscrowBadge';
 import TransactionProgress from '@/components/TransactionProgress';
 import PriceDisplay from '@/components/PriceDisplay';
 import type { EscrowStatus } from '@/lib/types';
 
-const TRANSACTIONS = [
-  {
-    id: 't1', cardName: 'Charizard VMAX', seller: 'TokyoCards', buyer: 'You',
-    priceIdr: 25750000, escrowStatus: 'shipped' as EscrowStatus,
-    paymentGateway: 'midtrans', date: '2 hours ago', role: 'buyer' as const,
-  },
-  {
-    id: 't2', cardName: 'Luka Doncic Prizm', seller: 'You', buyer: 'HoopFan88',
-    priceIdr: 15450000, escrowStatus: 'awaiting_shipment' as EscrowStatus,
-    paymentGateway: 'stripe', date: '1 day ago', role: 'seller' as const,
-  },
-  {
-    id: 't3', cardName: 'Pikachu V Full Art', seller: 'You', buyer: 'PKMNCollector',
-    priceIdr: 3605000, escrowStatus: 'completed' as EscrowStatus,
-    paymentGateway: 'midtrans', date: '5 days ago', role: 'seller' as const,
-  },
-];
-
 export default function TransactionsPage() {
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'buying' | 'selling'>('all');
 
-  const filtered = TRANSACTIONS.filter(t => {
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        // TODO: Replace with actual API call
+        // const response = await fetch('/api/transactions?filter=' + filter);
+        // const data = await response.json();
+        // setTransactions(data);
+
+        setTransactions([]);
+      } catch (error) {
+        console.error('Failed to fetch transactions:', error);
+        setTransactions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [filter]);
+
+  const filtered = transactions.filter(t => {
     if (filter === 'buying') return t.role === 'buyer';
     if (filter === 'selling') return t.role === 'seller';
     return true;

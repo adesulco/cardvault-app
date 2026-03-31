@@ -1,27 +1,34 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 
-const CONVERSATIONS = [
-  {
-    id: 'c1', user: 'TokyoCards', avatar: 'T', lastMessage: 'I\'ll ship it today!',
-    time: '2m ago', unread: 2, transactionRef: 'Charizard VMAX',
-  },
-  {
-    id: 'c2', user: 'HoopFan88', avatar: 'H', lastMessage: 'Is the card still available?',
-    time: '1h ago', unread: 0, transactionRef: 'Luka Doncic Prizm',
-  },
-  {
-    id: 'c3', user: 'PKMNCollector', avatar: 'P', lastMessage: 'Thanks for the trade!',
-    time: '2d ago', unread: 0, transactionRef: null,
-  },
-];
-
 export default function MessagesPage() {
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const filtered = CONVERSATIONS.filter(c =>
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        // TODO: Replace with actual API call
+        // const response = await fetch('/api/messages');
+        // const data = await response.json();
+        // setConversations(data);
+
+        setConversations([]);
+      } catch (error) {
+        console.error('Failed to fetch conversations:', error);
+        setConversations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConversations();
+  }, []);
+
+  const filtered = conversations.filter(c =>
     !search || c.user.toLowerCase().includes(search.toLowerCase())
   );
 

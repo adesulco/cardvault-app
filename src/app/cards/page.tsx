@@ -1,14 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Filter, Grid3X3, List } from 'lucide-react';
 import CardGrid from '@/components/CardGrid';
-
-const MY_CARDS = [
-  { id: 'mc1', cardName: 'Charizard VMAX', playerOrCharacter: 'Pokémon', frontImageUrl: null, condition: 'graded' as const, grade: '10', gradingCompany: 'PSA', priceIdr: 25000000, status: 'listed_sale' },
-  { id: 'mc2', cardName: 'Pikachu V Full Art', playerOrCharacter: 'Pokémon', frontImageUrl: null, condition: 'graded' as const, grade: '9', gradingCompany: 'PSA', priceIdr: 3500000, status: 'in_collection' },
-  { id: 'mc3', cardName: 'Jeter Rookie', playerOrCharacter: 'Baseball', frontImageUrl: null, condition: 'raw' as const, grade: null, gradingCompany: null, priceIdr: 7000000, status: 'in_collection' },
-];
 
 const STATUS_FILTERS = [
   { value: null, label: 'All' },
@@ -19,18 +13,40 @@ const STATUS_FILTERS = [
 ];
 
 export default function MyCollectionPage() {
+  const [cards, setCards] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
+  useEffect(() => {
+    const fetchCards = async () => {
+      try {
+        // TODO: Replace with actual API call
+        // const response = await fetch('/api/cards?status=' + (statusFilter || 'all'));
+        // const data = await response.json();
+        // setCards(data);
+
+        setCards([]);
+      } catch (error) {
+        console.error('Failed to fetch cards:', error);
+        setCards([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCards();
+  }, [statusFilter]);
+
   const filtered = statusFilter
-    ? MY_CARDS.filter(c => c.status === statusFilter)
-    : MY_CARDS;
+    ? cards.filter(c => c.status === statusFilter)
+    : cards;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-4 pt-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900">My Collection</h1>
-          <p className="text-sm text-gray-500">{MY_CARDS.length} cards</p>
+          <p className="text-sm text-gray-500">{cards.length} cards</p>
         </div>
         <Link
           href="/cards/new"

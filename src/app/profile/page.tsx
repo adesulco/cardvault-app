@@ -1,18 +1,7 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Settings, ChevronRight, Shield, Star, CreditCard, Bell, HelpCircle, LogOut, Package, Heart, BarChart3 } from 'lucide-react';
-
-const PROFILE = {
-  displayName: 'CardCollector',
-  email: 'collector@email.com',
-  location: 'Jakarta, Indonesia',
-  kycStatus: 'verified',
-  trustScore: 4.8,
-  totalTransactions: 42,
-  memberSince: 'Jan 2026',
-  cardsOwned: 15,
-  totalValue: 'Rp 175,000,000',
-};
 
 const MENU_ITEMS = [
   { icon: Package, label: 'My Collection', href: '/cards', badge: '15' },
@@ -26,6 +15,56 @@ const MENU_ITEMS = [
 ];
 
 export default function ProfilePage() {
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        // TODO: Replace with actual API call
+        // const response = await fetch('/api/profile');
+        // const data = await response.json();
+        // setProfile(data);
+
+        // For now, show not logged in
+        setProfile(null);
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="px-4 py-12 text-center">
+        <p className="text-sm text-gray-500">Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8">
+        <div className="text-5xl mb-4">🔒</div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Not Logged In</h1>
+        <p className="text-sm text-gray-600 text-center mb-6">
+          Please sign in to view your profile
+        </p>
+        <Link
+          href="/auth/login"
+          className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors"
+        >
+          Sign In
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 pb-8">
       {/* Profile Header */}
@@ -33,23 +72,23 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-              {PROFILE.displayName.charAt(0)}
+              {profile.displayName?.charAt(0) || 'U'}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-1.5">
-                <h1 className="text-lg font-bold text-gray-900">{PROFILE.displayName}</h1>
-                {PROFILE.kycStatus === 'verified' && (
+                <h1 className="text-lg font-bold text-gray-900">{profile.displayName}</h1>
+                {profile.kycStatus === 'APPROVED' && (
                   <Shield size={16} className="text-blue-600 fill-blue-100" />
                 )}
               </div>
-              <p className="text-xs text-gray-500">{PROFILE.location} · Member since {PROFILE.memberSince}</p>
+              <p className="text-xs text-gray-500">{profile.location || 'Location not set'}</p>
               <div className="flex items-center gap-3 mt-1.5">
                 <div className="flex items-center gap-1">
                   <Star size={14} className="text-yellow-500 fill-yellow-500" />
-                  <span className="text-sm font-semibold">{PROFILE.trustScore}</span>
+                  <span className="text-sm font-semibold">{profile.trustScore || '0'}</span>
                 </div>
                 <span className="text-xs text-gray-400">|</span>
-                <span className="text-xs text-gray-500">{PROFILE.totalTransactions} trades</span>
+                <span className="text-xs text-gray-500">{profile.totalTransactions || '0'} trades</span>
               </div>
             </div>
           </div>
@@ -57,15 +96,15 @@ export default function ProfilePage() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-100">
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-900">{PROFILE.cardsOwned}</p>
+              <p className="text-lg font-bold text-gray-900">{profile.cardsOwned || '0'}</p>
               <p className="text-[10px] text-gray-500">Cards</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-900">{PROFILE.totalTransactions}</p>
+              <p className="text-lg font-bold text-gray-900">{profile.totalTransactions || '0'}</p>
               <p className="text-[10px] text-gray-500">Trades</p>
             </div>
             <div className="text-center">
-              <p className="text-sm font-bold text-gray-900">{PROFILE.totalValue}</p>
+              <p className="text-sm font-bold text-gray-900">{profile.totalValue || 'Rp 0'}</p>
               <p className="text-[10px] text-gray-500">Collection Value</p>
             </div>
           </div>
