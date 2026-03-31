@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { ChevronLeft, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, ChevronLeft, RefreshCw, User } from 'lucide-react';
 
 interface KycApplication {
   id: string;
@@ -14,68 +13,62 @@ interface KycApplication {
   selfieUrl?: string;
   kycStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   kycSubmittedAt?: string;
+  kycReviewNote?: string;
+  countryCode?: string;
   createdAt: string;
 }
 
 export default function AdminKycPage() {
   const [applications, setApplications] = useState<KycApplication[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL'>('PENDING');
+  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
   const [selectedApp, setSelectedApp] = useState<KycApplication | null>(null);
   const [reviewNote, setReviewNote] = useState('');
   const [reviewing, setReviewing] = useState(false);
+  const [actionMessage, setActionMessage] = useState('');
 
-  useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        // TODO: Replace with actual API call
-        // const response = await fetch(`/api/admin/kyc?status=${filter}`);
-        // const data = await response.json();
-        // setApplications(data);
-
-        setApplications([]);
-      } catch (error) {
-        console.error('Failed to fetch KYC applications:', error);
-        setApplications([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchApplications();
-  }, [filter]);
-
-  const handleApprove = async (appId: string) => {
-    setReviewing(true);
+  const fetchApplications = async () => {
+    setLoading(true);
     try {
-      // TODO: Call API to approve
-      // await fetch(`/api/admin/kyc/${appId}`, {
-      //   method: 'PATCH',
-      //   body: JSON.stringify({ status: 'APPROVED', note: reviewNote }),
-      // });
-      setSelectedApp(null);
-      setReviewNote('');
-      // Refresh list
+      // The KYC API returns PENDING users by default; we'll fetch all users for filtering
+      const res = await fetch('/api/admin/users');
+      if (res.ok) {
+        const data = await res.json();
+        setApplications(data);
+      }
     } catch (error) {
-      console.error('Failed to approve:', error);
+      console.error('Failed to fetch KYC applications:', error);
     } finally {
-      setReviewing(false);
+      setLoading(false);
     }
   };
 
-  const handleReject = async (appId: string) => {
+  useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const handleAction = async (appId: string, status: 'APPROVED' | 'REJECTED') => {
     setReviewing(true);
+    setActionMessage('');
     try {
-      // TODO: Call API to reject
-      // await fetch(`/api/admin/kyc/${appId}`, {
-      //   method: 'PATCH',
-      //   body: JSON.stringify({ status: 'REJECTED', note: reviewNote }),
-      // });
-      setSelectedApp(null);
-      setReviewNote('');
-      // Refresh list
+      const res = await fetch('/api/admin/kyc', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: appId, status, note: reviewNote }),
+      });
+
+      if (res.ok) {
+        setActionMessage(`User ${status.toLowerCase()} successfully`);
+        setSelectedApp(null);
+        setReviewNote('');
+        // Refresh list
+        await fetchApplications();
+      } else {
+        const data = await res.json();
+        setActionMessage(`Error: ${data.error || 'Action failed'}`);
+      }
     } catch (error) {
-      console.error('Failed to reject:', error);
+      setActionMessage('Error: Network request failed');
     } finally {
       setReviewing(false);
     }
@@ -85,155 +78,212 @@ export default function AdminKycPage() {
     ? applications
     : applications.filter(app => app.kycStatus === filter);
 
+  const counts = {
+    ALL: applications.length,
+    PENDING: applications.filter(a => a.kycStatus === 'PENDING').length,
+    APPROVED: applications.filter(a => a.kycStatus === 'APPROVED').length,
+    REJECTED: applications.filter(a => a.kycStatus === 'REJECTED').length,
+  };
+
+  // Detail view
   if (selectedApp) {
     return (
-      <div className="space-y-4 p-4 pb-12">
+      <div className="max-w-2xl space-y-4">
         <div className="flex items-center gap-2">
-          <button onClick={() => setSelectedApp(null)} className="text-blue-600">
-            <ChevronLeft size={24} />
+          <button onClick={() => { setSelectedApp(null); setActionMessage(''); }} className="text-blue-600 hover:text-blue-800">
+            <ChevronLeft size={22} />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">Review Application</h1>
+          <h1 className="text-lg font-bold text-slate-900">Review Application</h1>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
-          <div>
-            <label className="text-xs font-medium text-gray-500 uppercase">Applicant Info</label>
-            <p className="text-sm font-medium text-gray-900 mt-1">{selectedApp.displayName}</p>
-            <p className="text-xs text-gray-600">{selectedApp.email}</p>
-            {selectedApp.phone && <p className="text-xs text-gray-600">{selectedApp.phone}</p>}
-            <p className="text-xs text-gray-600">Role: {selectedApp.userRole}</p>
-          </div>
-
-          {selectedApp.socialMedia && (
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase">Social Media</label>
-              <a href={selectedApp.socialMedia} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 break-all">
-                {selectedApp.socialMedia}
-              </a>
-            </div>
-          )}
-
-          {selectedApp.idDocumentUrl && (
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase">ID Document</label>
-              <a href={selectedApp.idDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600">
-                View Document
-              </a>
-            </div>
-          )}
-
-          {selectedApp.selfieUrl && (
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase">Selfie</label>
-              <a href={selectedApp.selfieUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600">
-                View Photo
-              </a>
-            </div>
-          )}
-
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-500">Status: <span className="font-medium text-gray-700">{selectedApp.kycStatus}</span></p>
-            <p className="text-xs text-gray-500 mt-1">Submitted: {new Date(selectedApp.createdAt).toLocaleDateString()}</p>
-          </div>
-        </div>
-
-        {selectedApp.kycStatus === 'PENDING' && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-            <div>
-              <label className="text-xs font-medium text-gray-600 block mb-2">Review Notes (optional)</label>
-              <textarea
-                value={reviewNote}
-                onChange={e => setReviewNote(e.target.value)}
-                placeholder="Add notes about this application..."
-                className="w-full p-2 border border-gray-200 rounded-lg text-xs"
-                rows={3}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleApprove(selectedApp.id)}
-                disabled={reviewing}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-              >
-                {reviewing ? 'Processing...' : 'Approve'}
-              </button>
-              <button
-                onClick={() => handleReject(selectedApp.id)}
-                disabled={reviewing}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
-              >
-                {reviewing ? 'Processing...' : 'Reject'}
-              </button>
-            </div>
+        {actionMessage && (
+          <div className={`p-3 rounded-lg text-sm ${actionMessage.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+            {actionMessage}
           </div>
         )}
+
+        <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+          {/* User Info */}
+          <div className="p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                <User size={20} className="text-slate-500" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{selectedApp.displayName || 'Unnamed'}</p>
+                <p className="text-xs text-slate-500">{selectedApp.email}</p>
+              </div>
+              <span className={`ml-auto text-xs font-medium px-2.5 py-1 rounded-full ${
+                selectedApp.kycStatus === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' :
+                selectedApp.kycStatus === 'REJECTED' ? 'bg-red-50 text-red-700' :
+                'bg-amber-50 text-amber-700'
+              }`}>
+                {selectedApp.kycStatus}
+              </span>
+            </div>
+          </div>
+
+          {/* Details */}
+          <div className="p-4 grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs font-medium text-slate-400 uppercase">Role</p>
+              <p className="text-slate-900">{selectedApp.userRole}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-slate-400 uppercase">Country</p>
+              <p className="text-slate-900">{selectedApp.countryCode || 'ID'}</p>
+            </div>
+            {selectedApp.phone && (
+              <div>
+                <p className="text-xs font-medium text-slate-400 uppercase">Phone</p>
+                <p className="text-slate-900">{selectedApp.phone}</p>
+              </div>
+            )}
+            {selectedApp.socialMedia && (
+              <div>
+                <p className="text-xs font-medium text-slate-400 uppercase">Social Media</p>
+                <a href={selectedApp.socialMedia} target="_blank" rel="noopener noreferrer" className="text-blue-600 break-all text-xs">
+                  {selectedApp.socialMedia}
+                </a>
+              </div>
+            )}
+            <div>
+              <p className="text-xs font-medium text-slate-400 uppercase">Registered</p>
+              <p className="text-slate-900">{new Date(selectedApp.createdAt).toLocaleDateString()}</p>
+            </div>
+            {selectedApp.kycReviewNote && (
+              <div className="col-span-2">
+                <p className="text-xs font-medium text-slate-400 uppercase">Previous Review Note</p>
+                <p className="text-slate-700 text-xs bg-slate-50 p-2 rounded mt-1">{selectedApp.kycReviewNote}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Action panel */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+          <h3 className="text-sm font-semibold text-slate-900">Take Action</h3>
+          <div>
+            <label className="text-xs font-medium text-slate-500 block mb-1">Review Note (optional)</label>
+            <textarea
+              value={reviewNote}
+              onChange={e => setReviewNote(e.target.value)}
+              placeholder="Add a note about this decision..."
+              className="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:outline-none"
+              rows={3}
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleAction(selectedApp.id, 'APPROVED')}
+              disabled={reviewing}
+              className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <CheckCircle size={16} />
+              {reviewing ? 'Processing...' : 'Approve'}
+            </button>
+            <button
+              onClick={() => handleAction(selectedApp.id, 'REJECTED')}
+              disabled={reviewing}
+              className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <XCircle size={16} />
+              {reviewing ? 'Processing...' : 'Reject'}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 pb-12">
-      <div className="px-4 pt-4">
-        <h1 className="text-xl font-bold text-gray-900">KYC Applications</h1>
-        <p className="text-sm text-gray-500">Review seller verification applications</p>
+    <div className="max-w-3xl space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">KYC Approvals</h1>
+          <p className="text-sm text-slate-500">Review and manage user verification</p>
+        </div>
+        <button
+          onClick={fetchApplications}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Refresh
+        </button>
       </div>
 
       {/* Filter Tabs */}
-      <div className="px-4 flex gap-2 overflow-x-auto">
-        {['PENDING', 'APPROVED', 'REJECTED', 'ALL'].map(status => (
+      <div className="flex gap-2 overflow-x-auto">
+        {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(status => (
           <button
             key={status}
-            onClick={() => setFilter(status as any)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+            onClick={() => setFilter(status)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
               filter === status
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
-            {status}
+            {status} ({counts[status]})
           </button>
         ))}
       </div>
 
+      {actionMessage && (
+        <div className={`p-3 rounded-lg text-sm ${actionMessage.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+          {actionMessage}
+        </div>
+      )}
+
       {/* List */}
       {loading ? (
-        <div className="px-4 py-8 text-center">
-          <p className="text-sm text-gray-500">Loading applications...</p>
+        <div className="space-y-2">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
+              <div className="h-4 bg-slate-200 rounded w-1/3 mb-2" />
+              <div className="h-3 bg-slate-200 rounded w-1/2" />
+            </div>
+          ))}
         </div>
       ) : filteredApps.length === 0 ? (
-        <div className="px-4 py-12 text-center">
-          <p className="text-sm font-medium text-gray-900 mb-1">No applications</p>
-          <p className="text-xs text-gray-500">
-            {filter === 'ALL' ? 'No KYC applications yet' : `No ${filter.toLowerCase()} applications`}
+        <div className="bg-white rounded-xl border border-slate-200 py-12 text-center">
+          <p className="text-sm font-medium text-slate-900 mb-1">No applications</p>
+          <p className="text-xs text-slate-500">
+            {filter === 'ALL' ? 'No users registered yet' : `No ${filter.toLowerCase()} applications`}
           </p>
         </div>
       ) : (
-        <div className="px-4 space-y-2">
+        <div className="space-y-2">
           {filteredApps.map(app => {
             const statusIcon = app.kycStatus === 'APPROVED' ? (
-              <CheckCircle size={16} className="text-green-600" />
+              <CheckCircle size={16} className="text-emerald-600" />
             ) : app.kycStatus === 'REJECTED' ? (
               <XCircle size={16} className="text-red-600" />
             ) : (
-              <Clock size={16} className="text-yellow-600" />
+              <Clock size={16} className="text-amber-600" />
             );
 
             return (
               <button
                 key={app.id}
                 onClick={() => setSelectedApp(app)}
-                className="w-full bg-white rounded-xl border border-gray-200 p-3 text-left hover:bg-gray-50 transition-colors"
+                className="w-full bg-white rounded-xl border border-slate-200 p-4 text-left hover:shadow-sm transition-shadow"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm font-medium text-gray-900">{app.displayName}</p>
+                      <p className="text-sm font-medium text-slate-900 truncate">{app.displayName || 'Unnamed'}</p>
                       {statusIcon}
                     </div>
-                    <p className="text-xs text-gray-600">{app.email}</p>
-                    <p className="text-xs text-gray-500 mt-1">{app.userRole} • Applied {new Date(app.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-slate-500">{app.email}</p>
+                    <p className="text-xs text-slate-400 mt-1">{app.userRole} &middot; Joined {new Date(app.createdAt).toLocaleDateString()}</p>
                   </div>
+                  {app.kycStatus === 'PENDING' && (
+                    <span className="text-xs font-medium px-3 py-1 bg-amber-100 text-amber-700 rounded-full whitespace-nowrap">
+                      Needs Review
+                    </span>
+                  )}
                 </div>
               </button>
             );

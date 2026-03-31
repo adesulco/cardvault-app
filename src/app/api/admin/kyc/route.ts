@@ -5,12 +5,16 @@ export async function GET(request: NextRequest) {
   try {
     const users = await prisma.user.findMany({
       where: { kycStatus: 'PENDING' },
-      orderBy: { kycSubmittedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         email: true,
         displayName: true,
+        phone: true,
+        socialMedia: true,
+        countryCode: true,
         kycStatus: true,
+        userRole: true,
         idDocumentUrl: true,
         selfieUrl: true,
         kycSubmittedAt: true,
@@ -22,7 +26,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Error fetching KYC applications:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch applications' },
+      { error: 'Failed to fetch KYC applications' },
       { status: 500 }
     );
   }
@@ -30,17 +34,23 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, status, note } = body;
+    const { userId, status, note } = await request.json();
 
     if (!userId || !status) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'userId and status are required' },
         { status: 400 }
       );
     }
 
-    await prisma.user.update({
+    if (!['APPROVED', 'REJECTED'].includes(status)) {
+      return NextResponse.json(
+        { error: 'Status must be APPROVED or REJECTED' },
+        { status: 400 }
+      );
+    }
+
+    const updated = await prisma.user.update({
       where: { id: userId },
       data: {
         kycStatus: status,
@@ -51,12 +61,16 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `User ${status === 'APPROVED' ? 'approved' : 'rejected'}`,
+      user: {
+        id: updated.id,
+        email: updated.email,
+        kycStatus: updated.kycStatus,
+      },
     });
   } catch (error: any) {
     console.error('Error updating KYC status:', error);
     return NextResponse.json(
-      { error: 'Failed to update status' },
+      { error: 'Failed to update KYC status' },
       { status: 500 }
     );
   }

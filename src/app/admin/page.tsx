@@ -1,137 +1,165 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Users, ShoppingCart, AlertTriangle, DollarSign, Activity, Shield, Globe, Settings, TrendingUp, CreditCard } from 'lucide-react';
+import { Users, ShieldCheck, ArrowLeftRight, AlertTriangle, TrendingUp, RefreshCw } from 'lucide-react';
 
 interface AdminStats {
   totalUsers: number;
   pendingKyc: number;
   activeTransactions: number;
   openDisputes: number;
-  escrowBalance: number;
-  totalVolume30d: number;
-  feesCollected30d: number;
 }
 
-const ADMIN_MENU = [
-  { icon: Users, label: 'KYC Management', href: '/admin/kyc', desc: 'Review seller applications' },
-  { icon: ShoppingCart, label: 'Transactions', href: '/admin/transactions', desc: 'Monitor active escrows' },
-  { icon: Users, label: 'User Management', href: '/admin/users', desc: 'Manage all users' },
-  { icon: AlertTriangle, label: 'Disputes', href: '/admin/disputes', desc: 'Resolve buyer/seller disputes' },
-  { icon: DollarSign, label: 'Financial Reports', href: '/admin/finance', desc: 'Revenue, payouts, reconciliation' },
-  { icon: Activity, label: 'Gateway Health', href: '/admin/gateways', desc: 'Monitor payment gateways' },
-];
-
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<AdminStats>({
-    totalUsers: 0,
-    pendingKyc: 0,
-    activeTransactions: 0,
-    openDisputes: 0,
-    escrowBalance: 0,
-    totalVolume30d: 0,
-    feesCollected30d: 0,
-  });
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [recentUsers, setRecentUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/admin/stats');
-        // const data = await response.json();
-        // setStats(data);
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [statsRes, usersRes] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/admin/users'),
+      ]);
 
-        // For now, show empty stats
-        setStats({
-          totalUsers: 0,
-          pendingKyc: 0,
-          activeTransactions: 0,
-          openDisputes: 0,
-          escrowBalance: 0,
-          totalVolume30d: 0,
-          feesCollected30d: 0,
-        });
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
-      } finally {
-        setLoading(false);
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData);
       }
-    };
 
-    fetchStats();
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setRecentUsers(usersData.slice(0, 5));
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
-  const STATS = [
-    { label: 'Total Users', value: stats.totalUsers.toString(), icon: Users, color: 'bg-blue-50 text-blue-600' },
-    { label: 'Pending KYC', value: stats.pendingKyc.toString(), icon: AlertTriangle, color: 'bg-yellow-50 text-yellow-600' },
-    { label: 'Active Transactions', value: stats.activeTransactions.toString(), icon: ShoppingCart, color: 'bg-green-50 text-green-600' },
-    { label: 'Open Disputes', value: stats.openDisputes.toString(), icon: AlertTriangle, color: 'bg-red-50 text-red-600' },
-  ];
+  const STAT_CARDS = stats ? [
+    { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'bg-blue-500', href: '/admin/users' },
+    { label: 'Pending KYC', value: stats.pendingKyc, icon: ShieldCheck, color: 'bg-amber-500', href: '/admin/kyc' },
+    { label: 'Active Transactions', value: stats.activeTransactions, icon: ArrowLeftRight, color: 'bg-emerald-500', href: '/admin/transactions' },
+    { label: 'Open Disputes', value: stats.openDisputes, icon: AlertTriangle, color: 'bg-red-500', href: '/admin/disputes' },
+  ] : [];
 
   return (
-    <div className="space-y-5 pb-8">
-      <div className="px-4 pt-4">
-        <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-sm text-gray-500">CardVault Platform Management</p>
+    <div className="space-y-6 max-w-5xl">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-sm text-slate-500">Overview of your platform</p>
+        </div>
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Refresh
+        </button>
       </div>
 
-      {loading ? (
-        <div className="px-4 py-8 text-center">
-          <p className="text-sm text-gray-500">Loading stats...</p>
-        </div>
-      ) : (
-        <>
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-3 px-4">
-            {STATS.map(stat => {
-              const Icon = stat.icon;
-              return (
-                <div key={stat.label} className="bg-white rounded-xl border border-gray-200 p-3.5">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={`p-2 rounded-lg ${stat.color}`}>
-                      <Icon size={16} />
-                    </div>
-                  </div>
-                  <p className="text-lg font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-[10px] text-gray-500">{stat.label}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Quick Info */}
-          {stats.totalUsers === 0 && (
-            <div className="mx-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <p className="text-sm text-blue-900 font-medium">Welcome to the Admin Dashboard</p>
-              <p className="text-xs text-blue-700 mt-1">
-                Start by reviewing pending KYC applications in the KYC Management section.
-              </p>
+      {/* Stats Grid */}
+      {loading && !stats ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
+              <div className="h-4 bg-slate-200 rounded w-1/2 mb-3" />
+              <div className="h-8 bg-slate-200 rounded w-1/3" />
             </div>
-          )}
-        </>
-      )}
-
-      {/* Admin Menu */}
-      <div className="px-4">
-        <h2 className="text-sm font-semibold text-gray-900 mb-2">Management</h2>
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
-          {ADMIN_MENU.map(item => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
-            >
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <item.icon size={18} className="text-gray-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{item.label}</p>
-                <p className="text-[10px] text-gray-500">{item.desc}</p>
-              </div>
-            </Link>
           ))}
         </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {STAT_CARDS.map(stat => {
+            const Icon = stat.icon;
+            return (
+              <Link
+                key={stat.label}
+                href={stat.href}
+                className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow group"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`${stat.color} p-2 rounded-lg`}>
+                    <Icon size={16} className="text-white" />
+                  </div>
+                  <span className="text-xs text-slate-500 font-medium">{stat.label}</span>
+                </div>
+                <p className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                  {stat.value}
+                </p>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      {stats && stats.pendingKyc > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ShieldCheck size={20} className="text-amber-600" />
+            <div>
+              <p className="text-sm font-medium text-amber-900">
+                {stats.pendingKyc} KYC application{stats.pendingKyc > 1 ? 's' : ''} awaiting review
+              </p>
+              <p className="text-xs text-amber-700">New users are waiting for approval to start trading</p>
+            </div>
+          </div>
+          <Link
+            href="/admin/kyc"
+            className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors whitespace-nowrap"
+          >
+            Review Now
+          </Link>
+        </div>
+      )}
+
+      {/* Recent Users */}
+      <div className="bg-white rounded-xl border border-slate-200">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+          <h2 className="text-sm font-semibold text-slate-900">Recent Users</h2>
+          <Link href="/admin/users" className="text-xs text-blue-600 font-medium hover:underline">
+            View All
+          </Link>
+        </div>
+        {recentUsers.length === 0 ? (
+          <div className="px-4 py-8 text-center">
+            <p className="text-sm text-slate-500">No users yet</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-50">
+            {recentUsers.map((user: any) => (
+              <div key={user.id} className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">{user.displayName || 'Unnamed'}</p>
+                  <p className="text-xs text-slate-500">{user.email}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                    user.kycStatus === 'APPROVED'
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : user.kycStatus === 'REJECTED'
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-amber-50 text-amber-700'
+                  }`}>
+                    {user.kycStatus}
+                  </span>
+                  <span className="text-xs text-slate-400">{user.userRole}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

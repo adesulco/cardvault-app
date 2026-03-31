@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
+import AdminRouteDetector from '@/components/AdminRouteDetector';
 
 export const metadata: Metadata = {
   title: 'CardVault - Secure Trading Card Marketplace',
@@ -26,12 +27,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="bg-slate-50 text-slate-900 antialiased">
-        <Header />
-        <main className="pt-14 pb-20 min-h-screen max-w-lg mx-auto">
-          {children}
-        </main>
-        <BottomNav />
+      <body className="bg-slate-50 text-slate-900 antialiased" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" }}>
+        <AdminRouteDetector>
+          {(isAdmin) => isAdmin ? (
+            // Admin pages render without Header/BottomNav — admin layout handles its own shell
+            <>{children}</>
+          ) : (
+            // Consumer pages get the normal mobile shell
+            <>
+              <Header />
+              <main className="pt-14 pb-20 min-h-screen max-w-lg mx-auto">
+                {children}
+              </main>
+              <BottomNav />
+            </>
+          )}
+        </AdminRouteDetector>
       </body>
     </html>
   );
