@@ -4,7 +4,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   LayoutDashboard, Users, ShieldCheck, ArrowLeftRight,
-  AlertTriangle, LogOut, ChevronLeft, Menu, X
+  AlertTriangle, LogOut, Menu, X, Package, MessageSquare,
+  DollarSign, Settings, ScrollText
 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 
@@ -13,15 +14,26 @@ interface AdminUser {
   email: string;
 }
 
+interface BadgeCounts {
+  pendingKyc: number;
+  openDisputes: number;
+  pendingTransactions: number;
+}
+
 const AdminContext = createContext<{ user: AdminUser | null }>({ user: null });
 export const useAdmin = () => useContext(AdminContext);
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/kyc', label: 'KYC Approvals', icon: ShieldCheck },
-  { href: '/admin/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/disputes', label: 'Disputes', icon: AlertTriangle },
+  { href: '/admin/kyc', label: 'KYC Approvals', icon: ShieldCheck, badge: 'pendingKyc' },
+  { href: '/admin/transactions', label: 'Transactions', icon: ArrowLeftRight, badge: 'pendingTransactions' },
+  { href: '/admin/listings', label: 'Listings', icon: Package },
+  { href: '/admin/disputes', label: 'Disputes', icon: AlertTriangle, badge: 'openDisputes' },
+  { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
+  { href: '/admin/financials', label: 'Financials', icon: DollarSign },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin/activity', label: 'Activity Log', icon: ScrollText },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -30,6 +42,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<AdminUser | null>(null);
   const [checking, setChecking] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [badges, setBadges] = useState<BadgeCounts>({
+    pendingKyc: 0,
+    openDisputes: 0,
+    pendingTransactions: 0,
+  });
 
   // Skip auth check for the login page
   const isLoginPage = pathname === '/admin/login';
@@ -58,6 +75,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     checkSession();
   }, [isLoginPage, router]);
+
+  useEffect(() => {
+    if (isLoginPage || !user) return;
+
+    const fetchBadges = async () => {
+      try {
+        const res = await fetch('/api/admin/badges');
+        if (res.ok) {
+          const data = await res.json();
+          setBadges(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch badges:', error);
+      }
+    };
+
+    fetchBadges();
+    const interval = setInterval(fetchBadges, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, [user, isLoginPage]);
 
   const handleLogout = async () => {
     await fetch('/api/admin/session', { method: 'DELETE' });
@@ -118,6 +155,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               const isActive = pathname === item.href ||
                 (item.href !== '/admin' && pathname.startsWith(item.href));
               const Icon = item.icon;
+              const badgeKey = item.badge as keyof BadgeCounts | undefined;
+              const badgeCount = badgeKey ? badges[badgeKey] : 0;
+
               return (
                 <Link
                   key={item.href}
@@ -130,18 +170,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   }`}
                 >
                   <Icon size={18} />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {badgeCount > 0 && (
+                    <span className="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                      {badgeCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
           </nav>
 
           {/* Footer */}
-          <div className="border-t border-slate-700 p-4">
-            <p className="text-xs text-slate-400 mb-2 truncate">{user.email}</p>
+          <div className="border-t border-slate-700 p-4 space-y-3">
+            <div>
+              <p className="text-xs text-slate-400 mb-2 truncate">{user.email}</p>
+              <p className="text-[10px] text-slate-500">admin.cardvault.id</p>
+            </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 text-sm text-slate-400 hover:text-red-400 transition-colors"
+              className="flex items-center gap-2 text-sm text-slate-400 hover:text-red-400 transition-colors w-full"
             >
               <LogOut size={16} />
               Logout

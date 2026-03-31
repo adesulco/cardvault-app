@@ -8,7 +8,39 @@ export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const { pathname } = request.nextUrl;
 
-  // Only gate www.cardvault.id — let beta, localhost, and vercel.app through
+  // ── Admin subdomain routing ──
+  // admin.cardvault.id → rewrite to /admin routes
+  const isAdminDomain = hostname === 'admin.cardvault.id';
+
+  if (isAdminDomain) {
+    // Allow API routes, static assets through
+    if (
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/favicon') ||
+      pathname.startsWith('/manifest')
+    ) {
+      return NextResponse.next();
+    }
+
+    // If already on /admin path, let it through
+    if (pathname.startsWith('/admin')) {
+      return NextResponse.next();
+    }
+
+    // Rewrite root and other paths to /admin equivalent
+    const url = request.nextUrl.clone();
+    if (pathname === '/') {
+      url.pathname = '/admin';
+    } else if (pathname === '/login') {
+      url.pathname = '/admin/login';
+    } else {
+      url.pathname = `/admin${pathname}`;
+    }
+    return NextResponse.rewrite(url);
+  }
+
+  // ── Password gate for www.cardvault.id ──
   const isMainDomain =
     hostname === 'www.cardvault.id' || hostname === 'cardvault.id';
 
@@ -16,7 +48,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow the gate page itself, its API, static assets, and admin routes
+  // Allow the gate page itself, its API, static assets
   if (
     pathname === '/gate' ||
     pathname.startsWith('/api/gate') ||
@@ -42,12 +74,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };
