@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
-
-// TODO: Import PrismaClient once database is set up
-// import { PrismaClient } from '@prisma/client';
-// const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,17 +31,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'Email already registered' },
+        { status: 409 }
+      );
+    }
+
     // Hash password
     const passwordHash = await hash(password, 10);
 
-    // TODO: Implement database integration once Prisma is set up
-    // For now, just validate and return success response
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        displayName,
+        email: email.toLowerCase(),
+        passwordHash,
+        phone: phone || null,
+        socialMedia: socialMedia || null,
+        userRole: userRole || 'BUYER',
+        countryCode: countryCode || 'ID',
+        preferredCurrency: preferredCurrency || 'IDR',
+      },
+    });
 
     return NextResponse.json(
       {
         success: true,
         message: 'Registration successful. Please check your email to verify your account.',
-        userId: 'user_' + Date.now(),
+        userId: user.id,
       },
       { status: 201 }
     );

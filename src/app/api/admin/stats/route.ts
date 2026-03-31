@@ -1,18 +1,20 @@
 import { NextResponse } from 'next/server';
-
-// TODO: Import PrismaClient once database is set up
-// import { PrismaClient } from '@prisma/client';
-// const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // TODO: Implement database queries once Prisma is set up
-    // For now, return empty stats
+    const [totalUsers, pendingKyc, activeTransactions, openDisputes] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.count({ where: { kycStatus: 'PENDING' } }),
+      prisma.transaction.count({ where: { escrowStatus: { notIn: ['completed', 'refunded'] } } }),
+      prisma.dispute.count({ where: { resolution: 'pending' } }),
+    ]);
+
     return NextResponse.json({
-      totalUsers: 0,
-      pendingKyc: 0,
-      activeTransactions: 0,
-      openDisputes: 0,
+      totalUsers,
+      pendingKyc,
+      activeTransactions,
+      openDisputes,
       escrowBalance: 0,
       totalVolume30d: 0,
       feesCollected30d: 0,

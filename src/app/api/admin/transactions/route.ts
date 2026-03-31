@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// TODO: Import PrismaClient once database is set up
-// import { PrismaClient } from '@prisma/client';
-// const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Implement database queries once Prisma is set up
-    // For now, return empty array
-    return NextResponse.json([]);
+    const transactions = await prisma.transaction.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        buyer: { select: { id: true, email: true, displayName: true } },
+        seller: { select: { id: true, email: true, displayName: true } },
+      },
+    });
+
+    return NextResponse.json(transactions);
   } catch (error: any) {
     console.error('Error fetching transactions:', error);
     return NextResponse.json(

@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// TODO: Import PrismaClient once database is set up
-// import { PrismaClient } from '@prisma/client';
-// const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Implement database queries once Prisma is set up
-    // For now, return empty array
-    return NextResponse.json([]);
+    const users = await prisma.user.findMany({
+      where: { kycStatus: 'PENDING' },
+      orderBy: { kycSubmittedAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        kycStatus: true,
+        idDocumentUrl: true,
+        selfieUrl: true,
+        kycSubmittedAt: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json(users);
   } catch (error: any) {
     console.error('Error fetching KYC applications:', error);
     return NextResponse.json(
@@ -30,8 +40,14 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // TODO: Implement database updates once Prisma is set up
-    // TODO: Send email notification to user
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        kycStatus: status,
+        kycReviewedAt: new Date(),
+        kycReviewNote: note || null,
+      },
+    });
 
     return NextResponse.json({
       success: true,
