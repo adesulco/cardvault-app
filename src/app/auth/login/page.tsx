@@ -22,30 +22,41 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // TODO: Implement actual login API call
-      // For now, show mock KYC status flow
-      // In real implementation, this would call /api/auth/login
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-      // Mock: simulate checking KYC status
-      const mockKycStatus = 'PENDING'; // Change to test different flows
+      const data = await res.json();
 
-      if (mockKycStatus === 'PENDING') {
+      if (!res.ok) {
+        setError(data.error || 'Login failed');
+        setLoading(false);
+        return;
+      }
+
+      // Store user session
+      localStorage.setItem('cardvault_user', JSON.stringify(data.user));
+
+      // Check KYC status
+      const userKycStatus = data.user.kycStatus;
+
+      if (userKycStatus === 'PENDING') {
         setKycStatus('PENDING');
         setLoading(false);
         return;
       }
 
-      if (mockKycStatus === 'REJECTED') {
+      if (userKycStatus === 'REJECTED') {
         setKycStatus('REJECTED');
         setKycReviewNote('Your application was declined due to incomplete documentation.');
         setLoading(false);
         return;
       }
 
-      if (mockKycStatus === 'APPROVED') {
-        // Set auth cookie and redirect
-        router.push('/');
-      }
+      // APPROVED or any other status — let user in
+      router.push('/');
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {

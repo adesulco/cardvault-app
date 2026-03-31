@@ -65,12 +65,30 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      // TODO: Implement actual registration API call
-      // For now, just show success screen
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          displayName: formData.displayName,
+          phone: formData.phone,
+          countryCode: formData.countryCode,
+          preferredCurrency: formData.preferredCurrency,
+          userRole: formData.userRole,
+          socialMedia: formData.socialMedia,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Registration failed');
+        setLoading(false);
+        return;
+      }
+
       setSubmitted(true);
-      setTimeout(() => {
-        router.push('/auth/login');
-      }, 3000);
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {
