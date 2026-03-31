@@ -1,0 +1,303 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  passwordHash      String?
+  displayName       String?
+  avatarUrl         String?
+  bio               String?
+  location          String?
+  countryCode       String   @default("ID")
+  preferredCurrency String   @default("IDR")
+  kycStatus         String   @default("unverified") // unverified, pending, verified
+  payoutMethod      String?  // midtrans, xendit, stripe_connect, paypal
+  payoutAccountId   String?
+  trustScore        Float    @default(0)
+  totalTransactions Int      @default(0)
+  role              String   @default("user") // user, admin
+  isSuspended       Boolean  @default(false)
+  lastLogin         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  cards             Card[]
+  listings          Listing[]
+  buyerTransactions Transaction[] @relation("BuyerTransactions")
+  sellerTransactions Transaction[] @relation("SellerTransactions")
+  sentOffers        Offer[]   @relation("SentOffers")
+  receivedOffers    Offer[]   @relation("ReceivedOffers")
+  reviewsGiven      Review[]  @relation("ReviewsGiven")
+  reviewsReceived   Review[]  @relation("ReviewsReceived")
+  sentMessages      Message[] @relation("SentMessages")
+  receivedMessages  Message[] @relation("ReceivedMessages")
+  disputesOpened    Dispute[] @relation("DisputesOpened")
+  disputesAssigned  Dispute[] @relation("DisputesAssigned")
+  notifications     Notification[]
+  accounts          Account[]
+  sessions          Session[]
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Card {
+  id               String   @id @default(uuid())
+  ownerId          String
+  cardName         String
+  playerOrCharacter String?
+  year             String?
+  setName          String?
+  brand            String?
+  sportOrCategory  String?
+  condition        String   @default("raw") // raw, graded
+  grade            String?
+  gradingCompany   String?
+  certNumber       String?
+  frontImageUrl    String?
+  backImageUrl     String?
+  estimatedValueIdr Float?
+  estimatedValueUsd Float?
+  status           String   @default("in_collection") // in_collection, listed_sale, listed_trade, in_transaction, sold, traded
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  owner            User     @relation(fields: [ownerId], references: [id])
+  listings         Listing[]
+  offeredCards     OfferCard[]
+}
+
+model Listing {
+  id                 String   @id @default(uuid())
+  sellerId           String
+  cardId             String
+  listingType        String   @default("sale") // sale, trade, both
+  priceIdr           Float?
+  priceUsd           Float?
+  tradeDescription   String?
+  isBestOfferEnabled Boolean  @default(false)
+  status             String   @default("active") // active, paused, sold, traded, expired
+  viewsCount         Int      @default(0)
+  favoritesCount     Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  seller             User     @relation(fields: [sellerId], references: [id])
+  card               Card     @relation(fields: [cardId], references: [id])
+  transactions       Transaction[]
+  offers             Offer[]
+  favorites          Favorite[]
+}
+
+model Transaction {
+  id                        String   @id @default(uuid())
+  buyerId                   String
+  sellerId                  String
+  listingId                 String?
+  transactionType           String   // sale, trade, trade_with_cash
+  agreedPriceIdr            Float?
+  agreedPriceUsd            Float?
+  exchangeRateAtTransaction Float?
+  buyerCurrency             String   @default("IDR")
+  buyerPaidAmount           Float?
+  buyerPaidCurrency         String?
+  paymentGateway            String?  // midtrans, xendit, stripe, paypal
+  paymentMethodType         String?  // e_wallet, bank_transfer, card, paypal, qris
+  gatewayTransactionId      String?
+  platformFeeBuyerIdr       Float?
+  platformFeeSellerIdr      Float?
+  escrowStatus              String   @default("pending_payment")
+  // pending_payment, payment_held, awaiting_shipment, shipped, delivered, under_inspection, completed, disputed, refunded, auto_completed
+  trackingNumberSeller      String?
+  trackingNumberBuyer       String?
+  shippingCarrier           String?
+  deliveryConfirmedAt       DateTime?
+  inspectionDeadline        DateTime?
+  disputeId                 String?
+  payoutId                  String?
+  payoutGateway             String?
+  payoutAmountLocal         Float?
+  payoutCurrency            String?
+  completedAt               DateTime?
+  paymentIdempotencyKey     String?  @unique
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  buyer                     User     @relation("BuyerTransactions", fields: [buyerId], references: [id])
+  seller                    User     @relation("SellerTransactions", fields: [sellerId], references: [id])
+  listing                   Listing? @relation(fields: [listingId], references: [id])
+  dispute                   Dispute?
+  reviews                   Review[]
+  messages                  Message[]
+}
+
+model ExchangeRateLog {
+  id             String   @id @default(uuid())
+  baseCurrency   String   @default("USD")
+  targetCurrency String   @default("IDR")
+  rate           Float
+  source         String   // open_exchange_rates, bank_indonesia, manual
+  fetchedAt      DateTime @default(now())
+  expiresAt      DateTime
+}
+
+model Offer {
+  id              String   @id @default(uuid())
+  listingId       String
+  fromUserId      String
+  toUserId        String
+  offerType       String   // cash, trade, cash_and_trade
+  offeredAmountIdr Float?
+  offeredAmountUsd Float?
+  message         String?
+  status          String   @default("pending") // pending, accepted, rejected, countered, expired
+  parentOfferId   String?
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  listing         Listing  @relation(fields: [listingId], references: [id])
+  fromUser        User     @relation("SentOffers", fields: [fromUserId], references: [id])
+  toUser          User     @relation("ReceivedOffers", fields: [toUserId], references: [id])
+  parentOffer     Offer?   @relation("OfferChain", fields: [parentOfferId], references: [id])
+  counterOffers   Offer[]  @relation("OfferChain")
+  offeredCards    OfferCard[]
+}
+
+model OfferCard {
+  id       String @id @default(uuid())
+  offerId  String
+  cardId   String
+  offer    Offer  @relation(fields: [offerId], references: [id])
+  card     Card   @relation(fields: [cardId], references: [id])
+}
+
+model Dispute {
+  id              String   @id @default(uuid())
+  transactionId   String   @unique
+  openedByUserId  String
+  reason          String   // wrong_item, damaged, counterfeit, not_as_described, other
+  description     String?
+  evidenceUrls    String?  // JSON array
+  adminAssignedId String?
+  resolution      String   @default("pending") // pending, refund_buyer, release_seller, partial_refund, cancelled
+  refundAmountIdr Float?
+  refundGateway   String?
+  resolutionNotes String?
+  resolvedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  transaction     Transaction @relation(fields: [transactionId], references: [id])
+  openedBy        User        @relation("DisputesOpened", fields: [openedByUserId], references: [id])
+  adminAssigned   User?       @relation("DisputesAssigned", fields: [adminAssignedId], references: [id])
+}
+
+model Review {
+  id            String   @id @default(uuid())
+  transactionId String
+  reviewerId    String
+  revieweeId    String
+  rating        Int      // 1-5
+  comment       String?
+  isVisible     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  reviewer      User        @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee      User        @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+}
+
+model Message {
+  id            String   @id @default(uuid())
+  conversationId String
+  senderId      String
+  recipientId   String
+  transactionId String?
+  content       String
+  isRead        Boolean  @default(false)
+  readAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  sender        User        @relation("SentMessages", fields: [senderId], references: [id])
+  recipient     User        @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // offer_received, offer_accepted, payment_received, shipped, delivered, dispute, payout
+  title     String
+  body      String
+  data      String?  // JSON
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  listing   Listing @relation(fields: [listingId], references: [id])
+
+  @@unique([userId, listingId])
+}
+
+model GatewayConfiguration {
+  id                      String   @id @default(uuid())
+  gatewayName             String   @unique // midtrans, xendit, stripe, paypal
+  isActive                Boolean  @default(true)
+  priorityOrder           Int      @default(0)
+  supportedCurrencies     String?  // JSON array
+  supportedPaymentMethods String?  // JSON array
+  apiEndpoint             String?
+  webhookSecretHash       String?
+  lastHealthCheckAt       DateTime?
+  status                  String   @default("healthy") // healthy, degraded, down
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
