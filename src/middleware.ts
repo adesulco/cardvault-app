@@ -92,6 +92,16 @@ export function middleware(request: NextRequest) {
   // Check if visitor has the access cookie
   const accessCookie = request.cookies.get(GATE_COOKIE_NAME);
   if (accessCookie?.value === 'granted') {
+    // ── Global Platform Auth Wall Enforced Here ──
+    const isAuth = request.cookies.has('next-auth.session-token') || request.cookies.has('__Secure-next-auth.session-token');
+    const isPublic = pathname === '/' || pathname.startsWith('/auth') || pathname === '/gate';
+    const isStatic = pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.startsWith('/favicon') || pathname.startsWith('/manifest') || pathname.startsWith('/seed');
+
+    if (!isAuth && !isPublic && !isStatic) {
+       const url = request.nextUrl.clone();
+       url.pathname = '/';
+       return NextResponse.redirect(url);
+    }
     return NextResponse.next();
   }
 

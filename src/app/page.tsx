@@ -1,180 +1,141 @@
 'use client';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store';
-import CardGrid from '@/components/CardGrid';
-import { motion } from 'framer-motion';
-import { ArrowRight, ShieldCheck, Zap, Percent, CheckCircle, Globe, ChevronRight } from 'lucide-react';
-import BrandLogo from '@/components/BrandLogo';
-
-let discoveryCache: { featured: any[], trending: any[], config: any } | null = null;
-
-// The stunning TCG Hero Slab
-const FloatingSlab = ({ img, delay, rotation, zIndex, xOffset, yOffset }: any) => (
-  <motion.div
-    initial={{ y: 200, opacity: 0, rotate: rotation - 10 }}
-    animate={{ y: yOffset, opacity: 1, rotate: rotation, x: xOffset }}
-    transition={{ duration: 1.2, delay, type: "spring", bounce: 0.3 }}
-    className="absolute shadow-2xl rounded-[18px] border-[1.5px] border-white/20 overflow-hidden bg-slate-900"
-    style={{ zIndex, width: 140, height: 200 }}
-  >
-    <img src={img} alt="Grail Hook" className="w-full h-full object-cover" />
-  </motion.div>
-);
+import { BadgeCheck, Globe, Lock, CheckCircle2 } from 'lucide-react';
 
 export default function HomePage() {
-  const { user } = useAppStore((state) => state);
-  const [mounted, setMounted] = useState(false);
-  const [trendingListings, setTrendingListings] = useState<any[]>(discoveryCache?.trending || []);
-  const [config, setConfig] = useState<any>(discoveryCache?.config || { feePercentage: 3.0 });
-  const [loading, setLoading] = useState(!discoveryCache);
-
-  useEffect(() => {
-    setMounted(true);
-    Promise.all([
-      fetch('/api/listings?sort=popular').then(r => r.json()),
-      fetch('/api/admin/config').then(r => r.json())
-    ]).then(([listingsData, configData]) => {
-      discoveryCache = {
-         featured: [],
-         trending: listingsData.listings || [],
-         config: configData || { feePercentage: 3.0 }
-      };
-      setTrendingListings(discoveryCache.trending);
-      setConfig(discoveryCache.config);
-      setLoading(false);
-    }).catch(console.error);
-  }, []);
-
-  if (!mounted) return <div className="min-h-screen bg-slate-50" />;
-
-  const isZeroFee = config.feePercentage === 0;
+  const user = useAppStore((state) => state.user);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24 overflow-x-hidden">
-      
-      {/* ── CINEMATIC HERO SECTION ── */}
-      <div className="relative w-full pt-12 pb-20 px-6 overflow-hidden max-w-lg mx-auto bg-gradient-to-b from-slate-50 to-white">
-         <motion.div 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-            className="relative z-20"
-         >
-            {isZeroFee ? (
-               <div className="inline-flex items-center gap-2 bg-rose-100 text-rose-700 px-3 py-1.5 rounded-full text-[10px] font-black tracking-wide uppercase mb-6 shadow-sm ring-1 ring-rose-200">
-                  <Percent size={12} /> PROMO: 0% SELLER FEES
-               </div>
+    <div className="space-y-6 pb-12 bg-slate-50 min-h-screen">
+      {/* Hero Banner */}
+      <div className="mx-4 pt-6">
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[16px] p-6 text-white shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="bg-amber-500 text-white px-2.5 py-1 rounded-full text-[10px] font-bold tracking-tight uppercase">
+              BETA
+            </span>
+            <span className="text-blue-200 text-xs font-medium">Limited Access</span>
+          </div>
+          
+          <h1 className="text-[24px] leading-tight font-bold mb-2">CardVault Beta</h1>
+          <p className="text-blue-100 text-[14px] leading-relaxed mb-4">
+            Trade with confidence. Your cards, your money — protected. Buy, sell, and trade collectible cards with vault protection.
+          </p>
+
+          <div className="flex flex-col gap-2">
+            {!user ? (
+              <>
+                <Link href="/auth/register" className="w-full bg-white text-indigo-700 font-semibold text-center mt-1 py-3.5 rounded-xl text-[14px] hover:bg-blue-50 transition-colors">
+                  Apply to Join Beta
+                </Link>
+                <Link href="/auth/login" className="w-full bg-white/20 text-white font-semibold text-center py-3.5 rounded-xl text-[14px] hover:bg-white/30 transition-colors">
+                  Already a Member? Login
+                </Link>
+              </>
             ) : (
-               <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-[10px] font-black tracking-wide uppercase mb-6 shadow-sm ring-1 ring-blue-200">
-                  <Zap size={12} /> LOW {config.feePercentage}% TRANSACTION FEE
-               </div>
+              <Link href="/explore" className="w-full bg-white text-indigo-700 font-semibold text-center mt-1 py-3.5 rounded-xl text-[14px] hover:bg-blue-50 transition-colors">
+                Enter Marketplace
+              </Link>
             )}
-            
-            <h1 className="text-4xl sm:text-5xl font-black text-slate-900 leading-[1.1] tracking-tight">
-               Trade Grails.<br/>
-               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                  Defeat Scammers.
-               </span>
-            </h1>
-            <p className="mt-4 text-sm text-slate-600 font-medium leading-relaxed max-w-[280px]">
-               CardVault is Indonesia's most secure protection network. We don't vault your cards—we protect your cash until the slab is in your hands.
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3">
-               {!user ? (
-                  <Link href="/auth/register" className="w-full bg-slate-900 text-white font-bold text-center py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-800 active:scale-95 transition-all shadow-xl shadow-slate-900/20">
-                     Join the Beta <ArrowRight size={18} />
-                  </Link>
-               ) : (
-                  <Link href="/explore" className="w-full bg-blue-600 text-white font-bold text-center py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 transition-all shadow-xl shadow-blue-600/20">
-                     Browse Grails <ArrowRight size={18} />
-                  </Link>
-               )}
-            </div>
-         </motion.div>
-
-         {/* Beautiful 3D Slabs Layout */}
-         <div className="absolute right-0 top-6 bottom-0 w-[55%] pointer-events-none z-10 hidden sm:block">
-             <FloatingSlab img="/seed/blue_eyes.png" delay={0.1} rotation={-12} zIndex={10} xOffset={20} yOffset={20} />
-             <FloatingSlab img="/seed/charizard.png" delay={0.3} rotation={5} zIndex={30} xOffset={80} yOffset={40} />
-             <FloatingSlab img="/seed/ohtani.png" delay={0.2} rotation={18} zIndex={20} xOffset={160} yOffset={80} />
-         </div>
-         {/* Mobile Optimized Slabs */}
-         <div className="relative h-[240px] mt-10 sm:hidden pointer-events-none mx-auto w-full max-w-[300px]">
-             <FloatingSlab img="/seed/blue_eyes.png" delay={0.1} rotation={-15} zIndex={10} xOffset={0} yOffset={20} />
-             <FloatingSlab img="/seed/charizard.png" delay={0.3} rotation={0} zIndex={30} xOffset={80} yOffset={0} />
-             <FloatingSlab img="/seed/ohtani.png" delay={0.2} rotation={15} zIndex={20} xOffset={160} yOffset={40} />
-         </div>
+          </div>
+        </div>
       </div>
 
-      <div className="max-w-lg mx-auto">
-         {/* ── SECURITY HOOKS ── */}
-         <motion.div 
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="px-5 mt-4"
-         >
-            <div className="grid grid-cols-2 gap-3">
-               <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-                  <ShieldCheck size={24} className="text-emerald-500 mb-2" />
-                  <h3 className="font-bold text-slate-900 text-xs">Vault Protection</h3>
-                  <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">Funds are locked seamlessly via Midtrans until the buyer explicitly accepts the delivery.</p>
-               </div>
-               <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
-                  <CheckCircle size={24} className="text-blue-500 mb-2" />
-                  <h3 className="font-bold text-slate-900 text-xs">Verified Sellers</h3>
-                  <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">Every dealer undergoes strict KYC. No ghosts. No fakes. Real identities backed by local law.</p>
-               </div>
-            </div>
-         </motion.div>
-
-         {/* ── DYNAMIC TRENDING FEED ── */}
-         <div className="px-5 mt-10">
-            <div className="flex items-center justify-between mb-4">
-               <div>
-                  <h2 className="text-lg font-black text-slate-900 tracking-tight">Trending Grails</h2>
-                  <p className="text-[11px] text-slate-500 font-medium">Verified Protected Listings</p>
-               </div>
-               <Link href="/explore" className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-300" aria-label="Explore Active Listings">
-                  <ChevronRight size={16} />
-               </Link>
-            </div>
-            
-            {loading ? (
-               <div className="flex gap-4 overflow-x-hidden opacity-50">
-                  <div className="w-[140px] h-[200px] bg-slate-200 rounded-2xl animate-pulse shrink-0" />
-                  <div className="w-[140px] h-[200px] bg-slate-200 rounded-2xl animate-pulse shrink-0" />
-                  <div className="w-[140px] h-[200px] bg-slate-200 rounded-2xl animate-pulse shrink-0" />
-               </div>
-            ) : trendingListings.length > 0 ? (
-               <div className="pb-4">
-                  <CardGrid cards={trendingListings} />
-               </div>
-            ) : (
-               <div className="bg-slate-100 rounded-2xl p-8 text-center border border-slate-200/50">
-                  <BrandLogo size={40} />
-                  <p className="text-xs text-slate-500 font-bold mt-4">No Active Listings</p>
-               </div>
-            )}
-         </div>
-
-         {/* ── MARKETING FOOTER ── */}
-         <div className="px-5 mt-8 pb-12">
-            <div className="bg-slate-900 rounded-[24px] p-6 text-center relative overflow-hidden shadow-2xl">
-               <div className="absolute top-0 right-0 p-8 opacity-5">
-                  <BrandLogo size={120} />
-               </div>
-               <Globe className="text-blue-400 mx-auto mb-3" size={28} />
-               <h3 className="text-white font-black text-lg">Built for Indonesia.</h3>
-               <p className="text-slate-400 text-xs mt-2 leading-relaxed max-w-[240px] mx-auto">
-                  Powered natively by Midtrans. Accept QRIS, GoPay, and Bank Transfers seamlessly.
-               </p>
-               {!user && (
-                  <Link href="/auth/register" className="inline-block mt-6 bg-blue-600 text-white font-bold text-xs px-6 py-3 rounded-xl hover:bg-blue-500 transition-colors">
-                     Create Free Account
-                  </Link>
-               )}
-            </div>
-         </div>
+      {/* Trust Badges */}
+      <div className="grid grid-cols-3 gap-3 px-4">
+        <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-emerald-50 content-center justify-center h-[90px]">
+          <Lock size={20} className="text-emerald-600 mb-0.5" strokeWidth={2} />
+          <span className="text-[10px] font-semibold text-slate-700 text-center leading-tight">Vault Protected</span>
+        </div>
+        <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-blue-50 content-center justify-center h-[90px]">
+          <BadgeCheck size={20} className="text-blue-600 mb-0.5" strokeWidth={2} />
+          <span className="text-[10px] font-semibold text-slate-700 text-center leading-tight">Verified Sellers</span>
+        </div>
+        <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-indigo-50 content-center justify-center h-[90px]">
+          <Globe size={20} className="text-indigo-600 mb-0.5" strokeWidth={2} />
+          <span className="text-[10px] font-semibold text-slate-700 text-center leading-tight">Indonesia-first</span>
+        </div>
       </div>
+
+      {/* How It Works */}
+      <div className="px-4 mt-6">
+        <h2 className="text-[16px] font-bold text-slate-900 mb-4">How It Works</h2>
+        <div className="flex flex-col gap-4">
+           <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-[14px] shrink-0">1</div>
+              <div className="pt-1">
+                 <h3 className="text-[14px] font-semibold text-slate-900">Place Order</h3>
+                 <p className="text-[12px] text-slate-500 mt-0.5 max-w-[240px]">Browse verified listings and make an offer</p>
+              </div>
+           </div>
+           <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-[14px] shrink-0">2</div>
+              <div className="pt-1">
+                 <h3 className="text-[14px] font-semibold text-slate-900">Secure Protection</h3>
+                 <p className="text-[12px] text-slate-500 mt-0.5 max-w-[240px]">Payment held safely during shipping</p>
+              </div>
+           </div>
+           <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-[14px] shrink-0">3</div>
+              <div className="pt-1">
+                 <h3 className="text-[14px] font-semibold text-slate-900">Receive & Confirm</h3>
+                 <p className="text-[12px] text-slate-500 mt-0.5 max-w-[240px]">Verify card, confirm receipt, funds released</p>
+              </div>
+           </div>
+        </div>
+      </div>
+
+      {/* Beta Features */}
+      <div className="px-4 mt-8">
+        <h2 className="text-[16px] font-bold text-slate-900 mb-3">Beta Features</h2>
+        <div className="border border-slate-200 rounded-xl p-4 bg-white flex flex-col gap-3">
+           <div className="flex items-center gap-2.5">
+              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" strokeWidth={2} />
+              <span className="text-[12px] text-slate-700 font-medium">Secure vault-protected transactions</span>
+           </div>
+           <div className="flex items-center gap-2.5">
+              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" strokeWidth={2} />
+              <span className="text-[12px] text-slate-700 font-medium">Multi-currency support (IDR & USD)</span>
+           </div>
+           <div className="flex items-center gap-2.5">
+              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" strokeWidth={2} />
+              <span className="text-[12px] text-slate-700 font-medium">Seller KYC verification</span>
+           </div>
+           <div className="flex items-center gap-2.5">
+              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" strokeWidth={2} />
+              <span className="text-[12px] text-slate-700 font-medium">Real-time payment gateways</span>
+           </div>
+           <div className="flex items-center gap-2.5">
+              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" strokeWidth={2} />
+              <span className="text-[12px] text-slate-700 font-medium">Dispute resolution system</span>
+           </div>
+           <div className="flex items-center gap-2.5">
+              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" strokeWidth={2} />
+              <span className="text-[12px] text-slate-700 font-medium">Seller ratings & reviews</span>
+           </div>
+        </div>
+      </div>
+
+      {/* FAQ */}
+      <div className="px-4 mt-8 mb-4">
+        <h2 className="text-[16px] font-bold text-slate-900 mb-3">FAQ</h2>
+        <div className="flex flex-col gap-2">
+          <div className="bg-white border border-slate-200 p-3 rounded-lg">
+             <p className="text-[12px] font-semibold text-slate-900 mb-1">Is CardVault free to use?</p>
+             <p className="text-[12px] text-slate-600 leading-relaxed">Yes, registration is free. We charge a small platform fee on sales (3%).</p>
+          </div>
+          <div className="bg-white border border-slate-200 p-3 rounded-lg">
+             <p className="text-[12px] font-semibold text-slate-900 mb-1">Who can I trade with?</p>
+             <p className="text-[12px] text-slate-600 leading-relaxed">You can trade with verified sellers who have passed our KYC process.</p>
+          </div>
+          <div className="bg-white border border-slate-200 p-3 rounded-lg">
+             <p className="text-[12px] font-semibold text-slate-900 mb-1">How long does shipping take?</p>
+             <p className="text-[12px] text-slate-600 leading-relaxed">Typically 3-7 days within Indonesia. International varies by carrier.</p>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

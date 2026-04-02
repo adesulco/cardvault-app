@@ -1,6 +1,6 @@
 'use client';
 import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
 import { useAppStore } from '@/lib/store';
@@ -11,6 +11,14 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const isGate = pathname.startsWith('/gate');
   const user = useAppStore((state) => state.user);
   const { setExchangeRate } = useAppStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    const isPublic = pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/gate');
+    if (!user && !isPublic && !isAdmin && !isGate) {
+      router.replace('/');
+    }
+  }, [user, pathname, isAdmin, isGate, router]);
 
   useEffect(() => {
     // Initialize Offline Capabilities (PWA)
@@ -44,6 +52,11 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   }, []);
 
   const isLandingAnonymous = pathname === '/' && !user;
+
+  const isPublicRoute = pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/gate');
+  if (!user && !isPublicRoute && !isAdmin && !isGate) {
+    return <div className="min-h-screen bg-slate-50" />; // Prevent flash of unauthorized content
+  }
 
   if (isAdmin || isGate || isLandingAnonymous) {
     // Admin pages and Anonymous Landing render without Header/BottomNav
