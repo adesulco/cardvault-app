@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
         OR: [{ senderId: userId }, { recipientId: userId }]
       },
       orderBy: { createdAt: 'desc' },
+      take: 200, // Implemented ceiling constraint to stop memory blowout
       include: {
         sender: { select: { id: true, displayName: true, avatarUrl: true } },
         recipient: { select: { id: true, displayName: true, avatarUrl: true } }

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const cards = await prisma.card.findMany({
-      where: { ownerId: (session.user as any).id, status: 'in_collection' },
+      where: { ownerId: (session.user as any).id }, // Removed 'in_collection' hardcode to return all user assets
       orderBy: { createdAt: 'desc' }
     });
     return NextResponse.json({ success: true, cards });

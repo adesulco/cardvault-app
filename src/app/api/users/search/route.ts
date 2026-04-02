@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -16,7 +18,8 @@ export async function GET(request: NextRequest) {
        where: {
           OR: [
              { displayName: { contains: query, mode: 'insensitive' } },
-             { username: { contains: query, mode: 'insensitive' } }
+             { username: { contains: query, mode: 'insensitive' } },
+             { email: { contains: query, mode: 'insensitive' } }
           ],
           NOT: {
              id: authorizerId || "block-self-search"

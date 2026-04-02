@@ -7,16 +7,16 @@ export default function MessagesLayout({ children }: { children: React.ReactNode
   const isRoot = pathname === '/messages';
 
   return (
-    <div className="flex h-[calc(100vh-60px)] md:h-[calc(100vh-80px)] max-w-[1200px] mx-auto bg-white md:border-x border-gray-100 overflow-hidden shadow-sm relative pt-safe">
-       {/* Sidebar Zone */}
-       <div className={`w-full md:w-[380px] border-r border-gray-100 flex-shrink-0 bg-white z-20 ${isRoot ? 'block' : 'hidden md:block'}`}>
-         <MessagesSidebar />
-       </div>
-       
-       {/* Active Chat Stream Zone */}
-       <div className={`w-full flex-1 flex flex-col bg-slate-50 relative ${!isRoot ? 'block' : 'hidden md:flex'}`}>
-         {children}
-       </div>
+    <div className="flex w-full bg-white relative overflow-hidden" style={{ minHeight: 'calc(100dvh - 136px)' }}>
+       {isRoot ? (
+         <div className="w-full flex-1 bg-white z-20">
+           <MessagesSidebar />
+         </div>
+       ) : (
+         <div className="w-full flex-1 flex flex-col bg-slate-50 relative">
+           {children}
+         </div>
+       )}
     </div>
   );
 }

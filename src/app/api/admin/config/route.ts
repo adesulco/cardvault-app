@@ -7,13 +7,19 @@ export async function GET(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    const config = await prisma.platformConfig.findUnique({
+    const configPercentage = await prisma.platformConfig.findUnique({
       where: { configKey: 'escrow_fee_percentage' }
     });
+    const configGaId = await prisma.platformConfig.findUnique({
+      where: { configKey: 'google_analytics_id' }
+    });
     
-    return NextResponse.json({ feePercentage: config ? parseFloat(config.configValue) : 3.0 });
+    return NextResponse.json({ 
+       feePercentage: configPercentage ? parseFloat(configPercentage.configValue) : 3.0,
+       gaId: configGaId ? configGaId.configValue : ''
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to access active vault constraints' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
 
@@ -22,24 +28,26 @@ export async function POST(request: NextRequest) {
   if (authError) return authError;
 
   try {
-    const { feePercentage } = await request.json();
-    if (feePercentage === undefined || typeof feePercentage !== 'number') {
-       return NextResponse.json({ error: 'A strictly mathematical percentage is required (e.g., 3.0 or 0)' }, { status: 400 });
+    const { feePercentage, gaId } = await request.json();
+    
+    if (feePercentage !== undefined) {
+      await prisma.platformConfig.upsert({
+        where: { configKey: 'escrow_fee_percentage' },
+        update: { configValue: feePercentage.toString() },
+        create: { configKey: 'escrow_fee_percentage', configValue: feePercentage.toString(), description: 'Payout Withholding' }
+      });
     }
 
-    const updated = await prisma.platformConfig.upsert({
-      where: { configKey: 'escrow_fee_percentage' },
-      update: { configValue: feePercentage.toString() },
-      create: {
-        configKey: 'escrow_fee_percentage',
-        configValue: feePercentage.toString(),
-        description: 'Global Marketplace Payout Withholding (Phase 13 Dynamic Setting)'
-      }
-    });
+    if (gaId !== undefined) {
+      await prisma.platformConfig.upsert({
+        where: { configKey: 'google_analytics_id' },
+        update: { configValue: gaId },
+        create: { configKey: 'google_analytics_id', configValue: gaId, description: 'Google Analytics Tracking ID (G-XXXX)' }
+      });
+    }
 
-    return NextResponse.json({ feePercentage: parseFloat(updated.configValue) });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Config Error:', error);
-    return NextResponse.json({ error: 'Platform DB execution blocked.' }, { status: 500 });
+    return NextResponse.json({ error: 'Configuration DB block' }, { status: 500 });
   }
 }

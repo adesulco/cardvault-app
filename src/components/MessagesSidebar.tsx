@@ -35,7 +35,7 @@ export default function MessagesSidebar() {
 
     const fetchInbox = async () => {
       try {
-        const res = await fetch(`/api/messages?userId=${user.id}`);
+        const res = await fetch(`/api/messages?userId=${user.id}&_t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setConversations(data.conversations || []);
@@ -58,7 +58,7 @@ export default function MessagesSidebar() {
   useEffect(() => {
      if (isComposerOpen && composerSearch.length >= 2) {
         setIsSearchingComposer(true);
-        fetch(`/api/users/search?q=${encodeURIComponent(composerSearch)}&userId=${user?.id}`)
+        fetch(`/api/users/search?q=${encodeURIComponent(composerSearch)}&userId=${user?.id}&_t=${Date.now()}`, { cache: 'no-store' })
            .then(r => r.json())
            .then(data => {
               if (data.users) setComposerResults(data.users);

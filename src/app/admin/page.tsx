@@ -19,7 +19,9 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [feePercentage, setFeePercentage] = useState<string>('3.0');
+  const [gaString, setGaString] = useState<string>('');
   const [isUpdatingFee, setIsUpdatingFee] = useState(false);
+  const [isUpdatingGa, setIsUpdatingGa] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -41,7 +43,8 @@ export default function AdminDashboard() {
        const res = await fetch('/api/admin/config');
        if (res.ok) {
          const data = await res.json();
-         setFeePercentage(data.feePercentage.toString());
+         if(data.feePercentage !== undefined) setFeePercentage(data.feePercentage.toString());
+         if(data.gaId) setGaString(data.gaId);
        }
      } catch(e) { console.error('Failed to grab configs'); }
   };
@@ -56,13 +59,22 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ feePercentage: val })
       });
-      if (res.ok) {
-        alert('Active Escrow Platform Fee dynamically modified successfully!');
-      } else {
-        alert('Execution rejected');
-      }
+      if (res.ok) alert('Active Escrow Platform Fee dynamically modified successfully!');
     } catch(e) { console.error(e); }
     setIsUpdatingFee(false);
+  };
+
+  const handleUpdateGa = async () => {
+    setIsUpdatingGa(true);
+    try {
+      const res = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gaId: gaString })
+      });
+      if (res.ok) alert('Analytics engine correctly synchronized!');
+    } catch(e) { console.error(e); }
+    setIsUpdatingGa(false);
   };
 
   useEffect(() => {
@@ -301,32 +313,61 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Active Platform Configuration Vectors ── */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-6">
-         <div className="flex items-center gap-3 mb-4">
-            <RefreshCw size={20} className="text-blue-600" />
-            <div>
-               <h2 className="text-sm font-bold text-slate-900 leading-tight">Dynamic Escrow Fee Configuration</h2>
-               <p className="text-xs text-slate-500 mt-0.5">Adjust the global percentage deducted from sellers when an Escrow mathematically completes. Set to 0 for Promos.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+               <RefreshCw size={20} className="text-blue-600" />
+               <div>
+                  <h2 className="text-sm font-bold text-slate-900 leading-tight">Dynamic Escrow Fee Configuration</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Adjust the global percentage deducted from sellers when an Escrow mathematically completes.</p>
+               </div>
+            </div>
+            <div className="flex items-center w-full gap-3">
+               <div className="relative flex-1">
+                  <input 
+                     type="text"
+                     className="w-full bg-slate-50 border border-slate-200 py-2 pl-4 pr-8 rounded-lg outline-none font-bold text-slate-700 text-sm"
+                     value={feePercentage}
+                     onChange={e => setFeePercentage(e.target.value)}
+                     placeholder="3.0"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
+               </div>
+               <button 
+                  onClick={handleUpdateFee}
+                  disabled={isUpdatingFee}
+                  className="bg-blue-600 text-white font-bold text-xs px-4 py-2.5 rounded-lg hover:bg-blue-700 transition"
+               >
+                  Override Fee
+               </button>
             </div>
          </div>
-         <div className="flex items-center max-w-sm gap-3">
-            <div className="relative flex-1">
-               <input 
-                  type="text"
-                  className="w-full bg-slate-50 border border-slate-200 py-2 pl-4 pr-8 rounded-lg outline-none font-bold text-slate-700"
-                  value={feePercentage}
-                  onChange={e => setFeePercentage(e.target.value)}
-                  placeholder="3.0"
-               />
-               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
+         
+         <div className="bg-white rounded-xl shadow-sm border border-emerald-200 p-6">
+            <div className="flex items-center gap-3 mb-4">
+               <div>
+                  <h2 className="text-sm font-bold text-emerald-900 leading-tight">Global Analytics Module @next</h2>
+                  <p className="text-xs text-emerald-700 mt-0.5">Wire an active Google Analytics property across the Edge routing tree dynamically.</p>
+               </div>
             </div>
-            <button 
-               onClick={handleUpdateFee}
-               disabled={isUpdatingFee}
-               className="bg-blue-600 text-white font-bold text-sm px-5 py-2.5 rounded-lg hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
-            >
-               {isUpdatingFee ? 'Syncing...' : 'Override Fee'}
-            </button>
+            <div className="flex items-center w-full gap-3">
+               <div className="relative flex-1">
+                  <input 
+                     type="text"
+                     className="w-full bg-emerald-50 border border-emerald-200 py-2 px-4 rounded-lg outline-none font-bold text-emerald-900 text-sm placeholder:text-emerald-300"
+                     value={gaString}
+                     onChange={e => setGaString(e.target.value)}
+                     placeholder="G-XXXXXX..."
+                  />
+               </div>
+               <button 
+                  onClick={handleUpdateGa}
+                  disabled={isUpdatingGa}
+                  className="bg-emerald-600 text-white font-bold text-xs px-4 py-2.5 rounded-lg hover:bg-emerald-700 transition"
+               >
+                  Connect
+               </button>
+            </div>
          </div>
       </div>
     </div>

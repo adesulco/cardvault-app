@@ -65,12 +65,12 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   // Consumer pages get the normal mobile shell
   return (
-    <>
+    <div className="max-w-md mx-auto min-h-screen bg-slate-50 relative shadow-2xl overflow-x-hidden border-l border-r border-gray-200">
       <Header />
-      <main className="pt-14 pb-20 min-h-screen max-w-lg mx-auto">
+      <main className="pt-14 pb-20 min-h-screen">
         {children}
       </main>
       {user && <BottomNav />}
-    </>
+    </div>
   );
 }

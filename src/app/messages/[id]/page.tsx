@@ -47,7 +47,7 @@ export default function ChatThreadPage() {
 
     const fetchThread = async (initialRun = false) => {
       try {
-        const res = await fetch(`/api/messages?conversationId=${conversationId}&userId=${user.id}`);
+        const res = await fetch(`/api/messages?conversationId=${conversationId}&userId=${user.id}&_t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setMessages(data.messages || []);
@@ -70,7 +70,7 @@ export default function ChatThreadPage() {
 
   useEffect(() => {
     if (listingRef) {
-       fetch(`/api/listings/${listingRef}`)
+       fetch(`/api/listings/${listingRef}?_t=${Date.now()}`, { cache: 'no-store' })
          .then(res => res.json())
          .then(data => {
             if (data.listing) setReferencedItem(data.listing);

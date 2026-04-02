@@ -4,47 +4,52 @@ import Link from 'next/link';
 import { Plus, Filter, Grid3X3, List } from 'lucide-react';
 import CardGrid from '@/components/CardGrid';
 
-const STATUS_FILTERS = [
-  { value: null, label: 'All' },
-  { value: 'in_collection', label: 'In Collection' },
-  { value: 'listed_sale', label: 'Listed' },
-  { value: 'in_transaction', label: 'In Transaction' },
-  { value: 'sold', label: 'Sold' },
+const TAB_DEFINITIONS = [
+  { id: 'collection', label: 'Collection' },
+  { id: 'listed', label: 'Listed' },
+  { id: 'transaction', label: 'In Transaction' },
+  { id: 'sold', label: 'Sold' },
 ];
 
 export default function MyCollectionPage() {
-  const [cards, setCards] = useState<any[]>([]);
+  const [allCards, setAllCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('collection');
 
   useEffect(() => {
-    const fetchCards = async () => {
+    const fetchMyCards = async () => {
       try {
-        const response = await fetch('/api/cards?status=' + (statusFilter || 'all'));
+        const response = await fetch('/api/user/cards');
         if (!response.ok) throw new Error('Failed to fetch');
         const data = await response.json();
-        setCards(data.cards || []);
+        setAllCards(data.cards || []);
       } catch (error) {
         console.error('Failed to fetch cards:', error);
-        setCards([]);
       } finally {
         setLoading(false);
       }
     };
+    fetchMyCards();
+  }, []);
 
-    fetchCards();
-  }, [statusFilter]);
+  const getFilteredCards = (tabId: string) => {
+     return allCards.filter(c => {
+        if (tabId === 'collection') return c.status === 'in_collection';
+        if (tabId === 'listed') return c.status === 'listed_sale' || c.status === 'listed_trade' || c.status === 'auction';
+        if (tabId === 'transaction') return c.status === 'in_transaction';
+        if (tabId === 'sold') return c.status === 'sold' || c.status === 'traded';
+        return false;
+     });
+  };
 
-  const filtered = statusFilter
-    ? cards.filter(c => c.status === statusFilter)
-    : cards;
+  const filtered = getFilteredCards(activeTab);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-4 pt-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900">My Collection</h1>
-          <p className="text-sm text-gray-500">{cards.length} cards</p>
+          <p className="text-sm text-gray-500">{allCards.length} total cards</p>
         </div>
         <Link
           href="/cards/new"
@@ -57,17 +62,17 @@ export default function MyCollectionPage() {
 
       {/* Status Filter */}
       <div className="flex gap-2 overflow-x-auto px-4 scrollbar-hide">
-        {STATUS_FILTERS.map(f => (
+        {TAB_DEFINITIONS.map(tab => (
           <button
-            key={f.label}
-            onClick={() => setStatusFilter(f.value)}
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
             className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              statusFilter === f.value
+              activeTab === tab.id
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            {f.label}
+            {tab.label} ({getFilteredCards(tab.id).length})
           </button>
         ))}
       </div>
