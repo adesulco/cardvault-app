@@ -62,7 +62,15 @@ export default function ChatThreadPage() {
         const res = await fetch(`/api/messages?counterpartId=${counterpartId}&userId=${user.id}&_t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          setMessages(data.messages || []);
+          const raw = data.messages || [];
+          const unique = [];
+          for (const m of raw) {
+             const last = unique[unique.length - 1];
+             if (!last || last.content !== m.content || (new Date(m.createdAt).getTime() - new Date(last.createdAt).getTime() > 60000)) {
+                 unique.push(m);
+             }
+          }
+          setMessages(unique);
           if (initialRun) setTimeout(scrollToBottom, 50);
         }
       } catch (err) {
@@ -297,7 +305,7 @@ export default function ChatThreadPage() {
       </div>
 
       {/* Engine Input Stream */}
-      <div className="absolute bottom-16 md:bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 p-3 z-20 w-full">
+      <div className="bg-white/80 backdrop-blur-md border-t border-gray-100 p-3 z-20 w-full shrink-0 sticky bottom-0 md:bottom-0 pb-safe">
         <form onSubmit={handleSend} className="flex gap-2 w-full max-w-3xl mx-auto">
           <input
             type="text"

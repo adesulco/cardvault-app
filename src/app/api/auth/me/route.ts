@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { jwtVerify } from 'jose';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const token = request.cookies.get('cv_session_token')?.value;
 
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized: Missing session' }, { status: 401 });
     }
+
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET || 'cardvault_secret_key_placeholder'));
+    const userId = payload.userId as string;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { compare } from 'bcryptjs';
+import { SignJWT } from 'jose';
 import prisma from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
@@ -42,7 +43,12 @@ export async function POST(request: NextRequest) {
       data: { lastLogin: new Date() },
     });
 
-    return NextResponse.json(
+    const jwt = await new SignJWT({ userId: user.id })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('7d')
+      .sign(new TextEncoder().encode(process.env.JWT_SECRET || 'cardvault_secret_key_placeholder'));
+
+    const response = NextResponse.json(
       {
         success: true,
         user: {
@@ -56,6 +62,15 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
+
+    response.cookies.set('cv_session_token', jwt, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return response;
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json(

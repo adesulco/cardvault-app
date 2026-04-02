@@ -4,7 +4,7 @@ import { DollarSign, TrendingUp } from 'lucide-react';
 
 interface FinancialData {
   totalRevenue: number;
-  platformFeesCollected: number;
+  totalVolume: number;
   completedPayouts: number;
   pendingPayouts: number;
   recentTransactions: any[];
@@ -48,16 +48,16 @@ export default function FinancialsPage() {
   const SUMMARY_CARDS = data
     ? [
         {
-          label: 'Total Revenue (30d)',
+          label: 'Total Platform Revenue',
           value: formatCurrency(data.totalRevenue),
-          icon: DollarSign,
-          color: 'bg-green-500',
-        },
-        {
-          label: 'Platform Fees Collected',
-          value: formatCurrency(data.platformFeesCollected),
           icon: TrendingUp,
           color: 'bg-blue-500',
+        },
+        {
+          label: 'Gross Volume Processed',
+          value: formatCurrency(data.totalVolume),
+          icon: DollarSign,
+          color: 'bg-green-500',
         },
         {
           label: 'Completed Payouts',

@@ -12,17 +12,21 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [cardsCount, watchlistCount, buyerTx, sellerTx] = await Promise.all([
+    const [cardsCount, watchlistCount, buyerTx, sellerTx, cards] = await Promise.all([
       prisma.card.count({ where: { ownerId: userId } }),
       prisma.favorite.count({ where: { userId } }),
-      prisma.transaction.count({ where: { buyerId: userId } }),
-      prisma.transaction.count({ where: { sellerId: userId } })
+      prisma.transaction.count({ where: { buyerId: userId, escrowStatus: "completed" } }),
+      prisma.transaction.count({ where: { sellerId: userId, escrowStatus: "completed" } }),
+      prisma.card.findMany({ where: { ownerId: userId }, select: { estimatedValueIdr: true } })
     ]);
+
+    const collectionValueIdr = cards.reduce((acc, c) => acc + (c.estimatedValueIdr || 0), 0);
 
     return NextResponse.json({
       cardsOwned: cardsCount,
       watchlistCount: watchlistCount,
       totalTransactions: buyerTx + sellerTx,
+      collectionValue: collectionValueIdr
     });
   } catch (error: any) {
     console.error('Failed to fetch profile stats:', error.message);

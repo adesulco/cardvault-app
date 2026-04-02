@@ -37,7 +37,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     // Dynamic Re-hydration: Pull active Postgres state to overwrite stale LocalStorage sessions
     const currentUser = useAppStore.getState().user;
     if (currentUser?.id) {
-      fetch(`/api/auth/me?userId=${currentUser.id}`)
+      fetch(`/api/auth/me`)
         .then(res => res.json())
         .then(data => {
           if (data.user) {

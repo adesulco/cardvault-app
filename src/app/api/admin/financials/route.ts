@@ -48,17 +48,17 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const totalRevenue = allTransactions.reduce((sum: number, tx: any) => {
+    const totalVolume = allTransactions.reduce((sum: number, tx: any) => {
       return sum + (tx.agreedPriceIdr || tx.agreedPriceUsd || 0);
     }, 0);
 
-    const platformFeesCollected = allTransactions.reduce((sum: number, tx: any) => {
+    const totalRevenue = allTransactions.reduce((sum: number, tx: any) => {
       return sum + (tx.platformFeeBuyerIdr || 0) + (tx.platformFeeSellerIdr || 0);
     }, 0);
 
     return NextResponse.json({
+      totalVolume,
       totalRevenue,
-      platformFeesCollected,
       pendingPayouts,
       completedPayouts,
       recentTransactions,

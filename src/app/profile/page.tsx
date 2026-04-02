@@ -21,7 +21,7 @@ export default function ProfilePage() {
   const { user, logout } = useAppStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [stats, setStats] = useState({ cardsOwned: 0, watchlistCount: 0, totalTransactions: 0 });
+  const [stats, setStats] = useState({ cardsOwned: 0, watchlistCount: 0, totalTransactions: 0, collectionValue: 0 });
 
   useEffect(() => {
     setMounted(true);
@@ -91,7 +91,7 @@ export default function ProfilePage() {
                   <span className="text-sm font-semibold">{profile.trustScore || '0'}</span>
                 </div>
                 <span className="text-xs text-gray-400">|</span>
-                <span className="text-xs text-gray-500">{profile.totalTransactions || '0'} trades</span>
+                <span className="text-xs text-gray-500">{stats.totalTransactions} trades</span>
               </div>
             </div>
           </div>
@@ -107,7 +107,9 @@ export default function ProfilePage() {
               <p className="text-[10px] text-gray-500">Trades</p>
             </div>
             <div className="text-center">
-              <p className="text-sm font-bold text-gray-900">{profile.totalValue || 'Rp 0'}</p>
+              <p className="text-sm font-bold text-gray-900">
+                {stats.collectionValue > 0 ? `Rp ${stats.collectionValue.toLocaleString('id-ID')}` : 'Rp 0'}
+              </p>
               <p className="text-[10px] text-gray-500">Collection Value</p>
             </div>
           </div>
@@ -115,15 +117,15 @@ export default function ProfilePage() {
       </div>
 
       {/* Trust Badges */}
-      <div className="px-4">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {['Verified Trader', 'Power Seller', '40+ Trades'].map(badge => (
-            <div key={badge} className="flex-shrink-0 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-              {badge}
-            </div>
-          ))}
+      {stats.totalTransactions > 0 && (
+        <div className="px-4">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+            {profile.kycStatus === 'APPROVED' && <div className="flex-shrink-0 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">Verified Trader</div>}
+            {stats.totalTransactions >= 10 && <div className="flex-shrink-0 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">Power Seller</div>}
+            {stats.totalTransactions >= 40 && <div className="flex-shrink-0 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">40+ Trades</div>}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Menu */}
       <div className="px-4">
