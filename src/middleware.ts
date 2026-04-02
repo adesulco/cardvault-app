@@ -3,10 +3,40 @@ import type { NextRequest } from 'next/server';
 
 const GATE_PASSWORD = process.env.SITE_GATE_PASSWORD || 'cardvault2024';
 const GATE_COOKIE_NAME = 'cardvault-gate-access';
+const rateLimitMap = new Map<string, { count: number; expiresAt: number }>();
+
+function checkRateLimit(ip: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  if (!record || record.expiresAt < now) {
+    rateLimitMap.set(ip, { count: 1, expiresAt: now + windowMs });
+    return true;
+  }
+  if (record.count >= limit) return false;
+  record.count += 1;
+  return true;
+}
 
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const { pathname } = request.nextUrl;
+
+  // ── 1. Edge Security Layer (Anti-Bot & Limiter) ──
+  if (pathname.includes('/bids')) {
+    const userAgent = request.headers.get('user-agent') || '';
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
+
+    // A. Explicit Headless/Script Blocking
+    const blockedSignatures = ['headless', 'puppeteer', 'playwright', 'postmanruntime', 'curl', 'wget', 'python-requests'];
+    if (blockedSignatures.some(sig => userAgent.toLowerCase().includes(sig))) {
+      return NextResponse.json({ error: 'Automated script traffic rejected by Edge Firewall.' }, { status: 403 });
+    }
+
+    // B. Basic Localized IP Throttling (Vercel Lambda Isolated)
+    if (!checkRateLimit(ip, 10, 10000)) { // Max 10 hits per 10 seconds
+      return NextResponse.json({ error: '429 Too Many Requests (IP Blocked)' }, { status: 429 });
+    }
+  }
 
   // ── Admin subdomain routing ──
   // admin.cardvault.id → rewrite to /admin routes

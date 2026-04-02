@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Settings, ChevronRight, Shield, Star, CreditCard, Bell, HelpCircle, LogOut, Package, Heart, BarChart3 } from 'lucide-react';
+import { useAppStore } from '@/lib/store';
+import { useRouter } from 'next/navigation';
+import TierBadge from '@/components/TierBadge';
 
 const MENU_ITEMS = [
   { icon: Package, label: 'My Collection', href: '/cards', badge: '15' },
@@ -15,37 +18,36 @@ const MENU_ITEMS = [
 ];
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, logout } = useAppStore();
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const [stats, setStats] = useState({ cardsOwned: 0, watchlistCount: 0, totalTransactions: 0 });
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/profile');
-        // const data = await response.json();
-        // setProfile(data);
+    setMounted(true);
+    if (user?.id) {
+      fetch(`/api/profile/stats?userId=${user.id}`)
+        .then(res => res.json())
+        .then(data => setStats(data))
+        .catch(console.error);
+    }
+  }, [user]);
 
-        // For now, show not logged in
-        setProfile(null);
-      } catch (error) {
-        console.error('Failed to fetch profile:', error);
-        setProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleLogout = () => {
+    logout();
+    localStorage.removeItem('cardvault_user');
+    router.push('/auth/login');
+  };
 
-    fetchProfile();
-  }, []);
-
-  if (loading) {
+  if (!mounted) {
     return (
       <div className="px-4 py-12 text-center">
         <p className="text-sm text-gray-500">Loading profile...</p>
       </div>
     );
   }
+
+  const profile = user as any;
 
   if (!profile) {
     return (
@@ -80,6 +82,7 @@ export default function ProfilePage() {
                 {profile.kycStatus === 'APPROVED' && (
                   <Shield size={16} className="text-blue-600 fill-blue-100" />
                 )}
+                <TierBadge totalTransactions={profile.totalTransactions || 0} trustScore={profile.trustScore || 0} />
               </div>
               <p className="text-xs text-gray-500">{profile.location || 'Location not set'}</p>
               <div className="flex items-center gap-3 mt-1.5">
@@ -96,11 +99,11 @@ export default function ProfilePage() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-100">
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-900">{profile.cardsOwned || '0'}</p>
+              <p className="text-lg font-bold text-gray-900">{stats.cardsOwned}</p>
               <p className="text-[10px] text-gray-500">Cards</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-900">{profile.totalTransactions || '0'}</p>
+              <p className="text-lg font-bold text-gray-900">{stats.totalTransactions}</p>
               <p className="text-[10px] text-gray-500">Trades</p>
             </div>
             <div className="text-center">
@@ -125,30 +128,38 @@ export default function ProfilePage() {
       {/* Menu */}
       <div className="px-4">
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
-          {MENU_ITEMS.map(item => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
-            >
-              <item.icon size={20} className="text-gray-500" />
-              <span className="flex-1 text-sm text-gray-900">{item.label}</span>
-              {item.badge && (
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  item.badge === 'Verified' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {item.badge}
-                </span>
-              )}
-              <ChevronRight size={16} className="text-gray-400" />
-            </Link>
-          ))}
+          {MENU_ITEMS.map(item => {
+            let actualBadge = item.badge;
+            if (item.label === 'My Collection') actualBadge = stats.cardsOwned.toString();
+            if (item.label === 'Watchlist') actualBadge = stats.watchlistCount > 0 ? stats.watchlistCount.toString() : null;
+            if (item.label === 'Transactions') actualBadge = stats.totalTransactions > 0 ? stats.totalTransactions.toString() : null;
+            if (item.label === 'KYC Verification') actualBadge = profile.kycStatus === 'APPROVED' ? 'Verified' : 'Pending';
+
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors"
+               >
+                <item.icon size={20} className="text-gray-500" />
+                <span className="flex-1 text-sm text-gray-900">{item.label}</span>
+                {actualBadge && (
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    actualBadge === 'Verified' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {actualBadge}
+                  </span>
+                )}
+                <ChevronRight size={16} className="text-gray-400" />
+              </Link>
+            )
+          })}
         </div>
       </div>
 
       {/* Logout */}
       <div className="px-4">
-        <button className="w-full flex items-center justify-center gap-2 py-3 text-red-600 text-sm font-medium">
+        <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 py-3 text-red-600 text-sm font-medium hover:bg-red-50 rounded-xl transition-colors">
           <LogOut size={18} />
           Sign Out
         </button>

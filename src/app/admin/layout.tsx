@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Users, ShieldCheck, ArrowLeftRight,
   AlertTriangle, LogOut, Menu, X, Package, MessageSquare,
-  DollarSign, Settings, ScrollText
+  DollarSign, Settings, ScrollText, Image as ImageIcon
 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 
@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { href: '/admin/disputes', label: 'Disputes', icon: AlertTriangle, badge: 'openDisputes' },
   { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
   { href: '/admin/financials', label: 'Financials', icon: DollarSign },
+  { href: '/admin/banners', label: 'Promo Banners', icon: ImageIcon },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
   { href: '/admin/activity', label: 'Activity Log', icon: ScrollText },
 ];

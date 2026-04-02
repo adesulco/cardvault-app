@@ -10,6 +10,7 @@ interface AdminStats {
   openDisputes: number;
   activeListings: number;
   totalRevenue: number;
+  pendingWithdrawals: number;
   recentTransactions: any[];
   recentUsers: any[];
 }
@@ -17,6 +18,8 @@ interface AdminStats {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [feePercentage, setFeePercentage] = useState<string>('3.0');
+  const [isUpdatingFee, setIsUpdatingFee] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -33,8 +36,38 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchConfig = async () => {
+     try {
+       const res = await fetch('/api/admin/config');
+       if (res.ok) {
+         const data = await res.json();
+         setFeePercentage(data.feePercentage.toString());
+       }
+     } catch(e) { console.error('Failed to grab configs'); }
+  };
+
+  const handleUpdateFee = async () => {
+    const val = parseFloat(feePercentage);
+    if (isNaN(val) || val < 0 || val > 100) return alert('Invalid mathematical percentage');
+    setIsUpdatingFee(true);
+    try {
+      const res = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feePercentage: val })
+      });
+      if (res.ok) {
+        alert('Active Escrow Platform Fee dynamically modified successfully!');
+      } else {
+        alert('Execution rejected');
+      }
+    } catch(e) { console.error(e); }
+    setIsUpdatingFee(false);
+  };
+
   useEffect(() => {
     fetchData();
+    fetchConfig();
   }, []);
 
   const formatCurrency = (amount: number) => {
@@ -131,6 +164,25 @@ export default function AdminDashboard() {
                 className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors whitespace-nowrap"
               >
                 Review Now
+              </Link>
+            </div>
+          )}
+          {stats.pendingWithdrawals > 0 && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <DollarSign size={20} className="text-emerald-600" />
+                <div>
+                  <p className="text-sm font-medium text-emerald-900">
+                    {stats.pendingWithdrawals} wire request{stats.pendingWithdrawals > 1 ? 's' : ''} processing
+                  </p>
+                  <p className="text-xs text-emerald-700">Vault withdrawals requiring manual clearing</p>
+                </div>
+              </div>
+              <Link
+                href="/admin/financials"
+                className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors whitespace-nowrap"
+              >
+                Wire Funds
               </Link>
             </div>
           )}
@@ -246,6 +298,36 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── Active Platform Configuration Vectors ── */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-6">
+         <div className="flex items-center gap-3 mb-4">
+            <RefreshCw size={20} className="text-blue-600" />
+            <div>
+               <h2 className="text-sm font-bold text-slate-900 leading-tight">Dynamic Escrow Fee Configuration</h2>
+               <p className="text-xs text-slate-500 mt-0.5">Adjust the global percentage deducted from sellers when an Escrow mathematically completes. Set to 0 for Promos.</p>
+            </div>
+         </div>
+         <div className="flex items-center max-w-sm gap-3">
+            <div className="relative flex-1">
+               <input 
+                  type="text"
+                  className="w-full bg-slate-50 border border-slate-200 py-2 pl-4 pr-8 rounded-lg outline-none font-bold text-slate-700"
+                  value={feePercentage}
+                  onChange={e => setFeePercentage(e.target.value)}
+                  placeholder="3.0"
+               />
+               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
+            </div>
+            <button 
+               onClick={handleUpdateFee}
+               disabled={isUpdatingFee}
+               className="bg-blue-600 text-white font-bold text-sm px-5 py-2.5 rounded-lg hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
+            >
+               {isUpdatingFee ? 'Syncing...' : 'Override Fee'}
+            </button>
+         </div>
       </div>
     </div>
   );

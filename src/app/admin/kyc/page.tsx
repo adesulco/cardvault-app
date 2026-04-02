@@ -1,293 +1,181 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, ChevronLeft, RefreshCw, User } from 'lucide-react';
+import { Shield, Check, X, Lock } from 'lucide-react';
 
-interface KycApplication {
-  id: string;
-  displayName: string;
-  email: string;
-  phone?: string;
-  userRole: string;
-  socialMedia?: string;
-  idDocumentUrl?: string;
-  selfieUrl?: string;
-  kycStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
-  kycSubmittedAt?: string;
-  kycReviewNote?: string;
-  countryCode?: string;
-  createdAt: string;
-}
-
-export default function AdminKycPage() {
-  const [applications, setApplications] = useState<KycApplication[]>([]);
+export default function AdminKycDashboard() {
+  const [isVerified, setIsVerified] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [queue, setQueue] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
-  const [selectedApp, setSelectedApp] = useState<KycApplication | null>(null);
-  const [reviewNote, setReviewNote] = useState('');
-  const [reviewing, setReviewing] = useState(false);
-  const [actionMessage, setActionMessage] = useState('');
+  const [expandedDocs, setExpandedDocs] = useState<Record<string, boolean>>({});
 
-  const fetchApplications = async () => {
-    setLoading(true);
-    try {
-      // The KYC API returns PENDING users by default; we'll fetch all users for filtering
-      const res = await fetch('/api/admin/users');
-      if (res.ok) {
-        const data = await res.json();
-        setApplications(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch KYC applications:', error);
-    } finally {
-      setLoading(false);
+  // Hardcoded dev mode OTP
+  const ADMIN_OTP_OVERRIDE = '123456';
+
+  const toggleDocs = (userId: string) => {
+    setExpandedDocs(prev => ({ ...prev, [userId]: !prev[userId] }));
+  };
+
+  const handleOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp === ADMIN_OTP_OVERRIDE) {
+      setIsVerified(true);
+      fetchQueue();
+    } else {
+      alert('Invalid OTP Security Code.');
     }
   };
 
-  useEffect(() => {
-    fetchApplications();
-  }, []);
-
-  const handleAction = async (appId: string, status: 'APPROVED' | 'REJECTED') => {
-    setReviewing(true);
-    setActionMessage('');
+  const fetchQueue = async () => {
     try {
-      const res = await fetch('/api/admin/kyc', {
-        method: 'PATCH',
+      const res = await fetch('/api/admin/kyc');
+      const data = await res.json();
+      setQueue(data.queue || []);
+    } catch (err) { }
+    finally { setLoading(false); }
+  };
+
+  const handleDecision = async (userId: string, action: 'APPROVED' | 'REJECTED') => {
+    if (!confirm(`Are you sure you want to ${action} this identity document?`)) return;
+    try {
+      setQueue(q => q.filter(u => u.id !== userId));
+      await fetch('/api/admin/kyc', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: appId, status, note: reviewNote }),
+        body: JSON.stringify({ userId, action, note: action === 'REJECTED' ? 'Documents illegible' : null })
       });
-
-      if (res.ok) {
-        setActionMessage(`User ${status.toLowerCase()} successfully`);
-        setSelectedApp(null);
-        setReviewNote('');
-        // Refresh list
-        await fetchApplications();
-      } else {
-        const data = await res.json();
-        setActionMessage(`Error: ${data.error || 'Action failed'}`);
-      }
-    } catch (error) {
-      setActionMessage('Error: Network request failed');
-    } finally {
-      setReviewing(false);
+    } catch (err) {
+      alert('Failed to process.');
     }
   };
 
-  const filteredApps = filter === 'ALL'
-    ? applications
-    : applications.filter(app => app.kycStatus === filter);
-
-  const counts = {
-    ALL: applications.length,
-    PENDING: applications.filter(a => a.kycStatus === 'PENDING').length,
-    APPROVED: applications.filter(a => a.kycStatus === 'APPROVED').length,
-    REJECTED: applications.filter(a => a.kycStatus === 'REJECTED').length,
-  };
-
-  // Detail view
-  if (selectedApp) {
+  if (!isVerified) {
     return (
-      <div className="max-w-2xl space-y-4">
-        <div className="flex items-center gap-2">
-          <button onClick={() => { setSelectedApp(null); setActionMessage(''); }} className="text-blue-600 hover:text-blue-800">
-            <ChevronLeft size={22} />
-          </button>
-          <h1 className="text-lg font-bold text-slate-900">Review Application</h1>
-        </div>
-
-        {actionMessage && (
-          <div className={`p-3 rounded-lg text-sm ${actionMessage.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
-            {actionMessage}
-          </div>
-        )}
-
-        <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
-          {/* User Info */}
-          <div className="p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
-                <User size={20} className="text-slate-500" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-900">{selectedApp.displayName || 'Unnamed'}</p>
-                <p className="text-xs text-slate-500">{selectedApp.email}</p>
-              </div>
-              <span className={`ml-auto text-xs font-medium px-2.5 py-1 rounded-full ${
-                selectedApp.kycStatus === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' :
-                selectedApp.kycStatus === 'REJECTED' ? 'bg-red-50 text-red-700' :
-                'bg-amber-50 text-amber-700'
-              }`}>
-                {selectedApp.kycStatus}
-              </span>
+      <div className="flex items-center justify-center min-h-[50vh] px-4">
+         <form onSubmit={handleOtpSubmit} className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-sm w-full text-center">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock size={28} />
             </div>
-          </div>
-
-          {/* Details */}
-          <div className="p-4 grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <p className="text-xs font-medium text-slate-400 uppercase">Role</p>
-              <p className="text-slate-900">{selectedApp.userRole}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-slate-400 uppercase">Country</p>
-              <p className="text-slate-900">{selectedApp.countryCode || 'ID'}</p>
-            </div>
-            {selectedApp.phone && (
-              <div>
-                <p className="text-xs font-medium text-slate-400 uppercase">Phone</p>
-                <p className="text-slate-900">{selectedApp.phone}</p>
-              </div>
-            )}
-            {selectedApp.socialMedia && (
-              <div>
-                <p className="text-xs font-medium text-slate-400 uppercase">Social Media</p>
-                <a href={selectedApp.socialMedia} target="_blank" rel="noopener noreferrer" className="text-blue-600 break-all text-xs">
-                  {selectedApp.socialMedia}
-                </a>
-              </div>
-            )}
-            <div>
-              <p className="text-xs font-medium text-slate-400 uppercase">Registered</p>
-              <p className="text-slate-900">{new Date(selectedApp.createdAt).toLocaleDateString()}</p>
-            </div>
-            {selectedApp.kycReviewNote && (
-              <div className="col-span-2">
-                <p className="text-xs font-medium text-slate-400 uppercase">Previous Review Note</p>
-                <p className="text-slate-700 text-xs bg-slate-50 p-2 rounded mt-1">{selectedApp.kycReviewNote}</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Action panel */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-slate-900">Take Action</h3>
-          <div>
-            <label className="text-xs font-medium text-slate-500 block mb-1">Review Note (optional)</label>
-            <textarea
-              value={reviewNote}
-              onChange={e => setReviewNote(e.target.value)}
-              placeholder="Add a note about this decision..."
-              className="w-full p-3 border border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:outline-none"
-              rows={3}
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Admin Security</h2>
+            <p className="text-sm text-gray-500 mb-6">Enter your 6-digit Authenticator OTP to securely access PII (Personally Identifiable Information).</p>
+            <input 
+              type="text"
+              value={otp}
+              onChange={e => setOtp(e.target.value)}
+              placeholder="000000"
+              maxLength={6}
+              className="text-center text-3xl tracking-widest font-mono w-full px-4 py-4 bg-gray-50 border-2 border-gray-200 rounded-xl mb-4 focus:border-blue-500"
             />
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleAction(selectedApp.id, 'APPROVED')}
-              disabled={reviewing}
-              className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <CheckCircle size={16} />
-              {reviewing ? 'Processing...' : 'Approve'}
+            <button className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold">
+              Verify Access
             </button>
-            <button
-              onClick={() => handleAction(selectedApp.id, 'REJECTED')}
-              disabled={reviewing}
-              className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <XCircle size={16} />
-              {reviewing ? 'Processing...' : 'Reject'}
-            </button>
-          </div>
-        </div>
+         </form>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="max-w-4xl mx-auto py-8 px-4">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">KYC Approvals</h1>
-          <p className="text-sm text-slate-500">Review and manage user verification</p>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Shield className="text-blue-600" /> KYC Approval Queue
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">Review pending government IDs and selfies to assign Trusted Seller Badges.</p>
         </div>
-        <button
-          onClick={fetchApplications}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
+        <div className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-bold">
+          {queue.length} Pending
+        </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto">
-        {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(status => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-              filter === status
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            {status} ({counts[status]})
-          </button>
-        ))}
-      </div>
-
-      {actionMessage && (
-        <div className={`p-3 rounded-lg text-sm ${actionMessage.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
-          {actionMessage}
-        </div>
-      )}
-
-      {/* List */}
       {loading ? (
-        <div className="space-y-2">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="bg-white rounded-xl border border-slate-200 p-4 animate-pulse">
-              <div className="h-4 bg-slate-200 rounded w-1/3 mb-2" />
-              <div className="h-3 bg-slate-200 rounded w-1/2" />
-            </div>
-          ))}
-        </div>
-      ) : filteredApps.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 py-12 text-center">
-          <p className="text-sm font-medium text-slate-900 mb-1">No applications</p>
-          <p className="text-xs text-slate-500">
-            {filter === 'ALL' ? 'No users registered yet' : `No ${filter.toLowerCase()} applications`}
-          </p>
+        <div className="text-center py-12 text-gray-400">Loading queue...</div>
+      ) : queue.length === 0 ? (
+        <div className="text-center py-24 bg-white rounded-2xl border border-gray-200 shadow-sm">
+          <div className="text-6xl mb-4">🎉</div>
+          <h3 className="text-lg font-bold text-gray-900">Queue Null</h3>
+          <p className="text-sm text-gray-500">All users have been verified.</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {filteredApps.map(app => {
-            const statusIcon = app.kycStatus === 'APPROVED' ? (
-              <CheckCircle size={16} className="text-emerald-600" />
-            ) : app.kycStatus === 'REJECTED' ? (
-              <XCircle size={16} className="text-red-600" />
-            ) : (
-              <Clock size={16} className="text-amber-600" />
-            );
+        <div className="space-y-6">
+          {queue.map(user => (
+            <div key={user.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden p-6">
+              <div className="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-900">{user.displayName || 'Unknown'}</h3>
+                   <p className="text-sm text-gray-500">{user.email}</p>
+                 </div>
+                 <div className="text-xs text-gray-400">
+                   Submitted {new Date(user.kycSubmittedAt).toLocaleDateString()}
+                 </div>
+              </div>
+              
+              <div className="flex justify-between items-center bg-gray-50 border border-gray-100 rounded-xl p-4">
+                 <div className="flex gap-4 items-center">
+                    <span className="text-sm font-semibold text-gray-700">Verification Files</span>
+                    {(!user.idDocumentUrl && !user.selfieUrl) ? (
+                       <span className="text-xs font-bold text-red-500 bg-red-100 px-2 py-0.5 rounded-full">Missing Uploads</span>
+                    ) : (
+                       <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">Files Attached</span>
+                    )}
+                 </div>
+                 {(user.idDocumentUrl || user.selfieUrl) && (
+                   <button 
+                     onClick={() => toggleDocs(user.id)}
+                     className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors"
+                   >
+                     {expandedDocs[user.id] ? 'Hide Documents ▲' : 'View Documents ▼'}
+                   </button>
+                 )}
+              </div>
 
-            return (
-              <button
-                key={app.id}
-                onClick={() => setSelectedApp(app)}
-                className="w-full bg-white rounded-xl border border-slate-200 p-4 text-left hover:shadow-sm transition-shadow"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm font-medium text-slate-900 truncate">{app.displayName || 'Unnamed'}</p>
-                      {statusIcon}
+              {expandedDocs[user.id] && (
+                <div className="grid grid-cols-2 gap-6 mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700 mb-2">Government ID</p>
+                    <div className="aspect-[4/3] bg-gray-200 rounded-xl relative overflow-hidden border border-gray-300 shadow-sm flex items-center justify-center">
+                      {user.idDocumentUrl ? (
+                         <img src={user.idDocumentUrl} alt="Government ID" className="w-full h-full object-cover hover:object-contain transition-all" />
+                      ) : (
+                         <div className="text-center text-gray-500 font-medium text-sm flex flex-col items-center gap-2">
+                           <X className="text-gray-400" size={24} />
+                           No ID Uploaded
+                         </div>
+                      )}
                     </div>
-                    <p className="text-xs text-slate-500">{app.email}</p>
-                    <p className="text-xs text-slate-400 mt-1">{app.userRole} &middot; Joined {new Date(app.createdAt).toLocaleDateString()}</p>
                   </div>
-                  {app.kycStatus === 'PENDING' && (
-                    <span className="text-xs font-medium px-3 py-1 bg-amber-100 text-amber-700 rounded-full whitespace-nowrap">
-                      Needs Review
-                    </span>
-                  )}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700 mb-2">Selfie Verification</p>
+                    <div className="aspect-[4/3] bg-gray-200 rounded-xl relative overflow-hidden border border-gray-300 shadow-sm flex items-center justify-center">
+                      {user.selfieUrl ? (
+                         <img src={user.selfieUrl} alt="Selfie Check" className="w-full h-full object-cover hover:object-contain transition-all" />
+                      ) : (
+                         <div className="text-center text-gray-500 font-medium text-sm flex flex-col items-center gap-2">
+                           <X className="text-gray-400" size={24} />
+                           No Selfie Uploaded
+                         </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </button>
-            );
-          })}
+              )}
+
+              <div className="flex gap-4 mt-6 pt-6 border-t border-gray-100">
+                <button 
+                  onClick={() => handleDecision(user.id, 'APPROVED')}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Check size={18} /> Approve (+10 Trust Score)
+                </button>
+                <button 
+                  onClick={() => handleDecision(user.id, 'REJECTED')}
+                  className="flex-1 py-3 bg-white hover:bg-red-50 text-red-600 border border-gray-200 hover:border-red-200 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                >
+                  <X size={18} /> Reject
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

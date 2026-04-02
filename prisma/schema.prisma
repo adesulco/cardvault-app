@@ -9,6 +9,7 @@ datasource db {
 }
 
 enum KycStatus {
+  UNVERIFIED
   PENDING
   APPROVED
   REJECTED
@@ -32,8 +33,11 @@ model User {
   socialMedia          String?
   countryCode          String   @default("ID")
   preferredCurrency    String   @default("IDR")
-  kycStatus            KycStatus @default(PENDING)
+  kycStatus            KycStatus @default(UNVERIFIED)
   userRole             UserRole @default(BUYER)
+  username             String?  @unique
+  referralCode         String?  @unique
+  referredBy           String?
   idDocumentUrl        String?
   selfieUrl            String?
   kycSubmittedAt       DateTime?
@@ -48,6 +52,9 @@ model User {
   totalTransactions    Int      @default(0)
   role                 String   @default("user") // user, admin (deprecated, use isAdmin and userRole)
   isSuspended          Boolean  @default(false)
+  achievements         String?   // JSON Array for Trophies/Badges
+  coinBalance          Int      @default(0)
+  walletBalanceIdr     Float    @default(0) // ── Phase 13: Authorized Vault Cash Reserve
   lastLogin            DateTime?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
@@ -67,6 +74,14 @@ model User {
   notifications        Notification[]
   accounts             Account[]
   sessions             Session[]
+  coinTransactions     CoinTransaction[]
+  subscription         SubscriptionTier?
+  promotedListings     PromotedListing[]
+  followers            Follows[] @relation("followers")
+  following            Follows[] @relation("following")
+  bids                 Bid[]
+  walletLedger         WalletTransaction[]
+  withdrawalRequests   WithdrawalRequest[]
 }
 
 model Account {
@@ -115,6 +130,7 @@ model Card {
   condition        String   @default("raw") // raw, graded
   grade            String?
   gradingCompany   String?
+  language         String   @default("EN") // EN, JP, KR, DE
   certNumber       String?
   frontImageUrl    String?
   backImageUrl     String?
@@ -139,6 +155,14 @@ model Listing {
   priceUsd           Float?
   tradeDescription   String?
   isBestOfferEnabled Boolean  @default(false)
+  minOfferIdr        Float?
+  
+  // Expiry & Auction Variables
+  listingMode        String   @default("fixed") // fixed, auction
+  expiresAt          DateTime?
+  startingBidIdr     Float?
+  currentBidIdr      Float?
+  
   status             String   @default("active") // active, paused, sold, traded, expired
   viewsCount         Int      @default(0)
   favoritesCount     Int      @default(0)
@@ -150,6 +174,8 @@ model Listing {
   transactions       Transaction[]
   offers             Offer[]
   favorites          Favorite[]
+  bids               Bid[]
+  promotedListing    PromotedListing?
 }
 
 model Transaction {
@@ -202,6 +228,18 @@ model ExchangeRateLog {
   source         String   // open_exchange_rates, bank_indonesia, manual
   fetchedAt      DateTime @default(now())
   expiresAt      DateTime
+}
+
+model Bid {
+  id              String   @id @default(uuid())
+  listingId       String
+  bidderId        String
+  amountIdr       Float
+  isWinning       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  listing         Listing  @relation(fields: [listingId], references: [id])
+  bidder          User     @relation(fields: [bidderId], references: [id])
 }
 
 model Offer {
@@ -316,6 +354,7 @@ model GatewayConfiguration {
   gatewayName             String   @unique // midtrans, xendit, stripe, paypal
   isActive                Boolean  @default(true)
   priorityOrder           Int      @default(0)
+  feeStructure            String?  // JSON: e.g. {"credit_card": 2.9, "bank_transfer": 4000, "qris": 0.7}
   supportedCurrencies     String?  // JSON array
   supportedPaymentMethods String?  // JSON array
   apiEndpoint             String?
@@ -324,4 +363,101 @@ model GatewayConfiguration {
   status                  String   @default("healthy") // healthy, degraded, down
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
+}
+
+// ── Admin Active Controls ──
+model PlatformConfig {
+  id              String   @id @default(uuid())
+  configKey       String   @unique // e.g., 'escrow_fee_percentage'
+  configValue     String   // e.g., '3.0' or '0'
+  description     String?  // Context for future admins
+  updatedAt       DateTime @updatedAt
+}
+
+// ── Phase 13: Direct IDR Audit Ledger ──
+model WalletTransaction {
+  id             String   @id @default(uuid())
+  userId         String
+  amountIdr      Float    // Positive (Credit) or Negative (Debit)
+  type           String   // top_up, withdrawal, escrow_sale, escrow_purchase
+  status         String   @default("completed") // pending, completed, failed
+  referenceId    String?  // Links to Midtrans Order ID, Withdrawal ID, or Escrow Transaction ID
+  description    String?
+  createdAt      DateTime @default(now())
+  
+  user           User     @relation(fields: [userId], references: [id])
+}
+
+model WithdrawalRequest {
+  id             String   @id @default(uuid())
+  userId         String
+  amountIdr      Float
+  status         String   @default("pending") // pending, processing, completed, rejected
+  bankCode       String   // bca, mandiri, bni, bri
+  accountNumber  String
+  accountName    String
+  adminNotes     String?
+  processedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  user           User     @relation(fields: [userId], references: [id])
+}
+
+model Banner {
+  id         String   @id @default(uuid())
+  imageUrl   String
+  linkUrl    String?
+  altText    String?
+  isActive   Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model CoinTransaction {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Int      // Positives (earned) and Negatives (redeemed)
+  source      String   // review, referral, escrow_completed, promotion_spend
+  description String
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model SubscriptionTier {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  tierName    String   // FREE, SILVER, GOLD, PLATINUM
+  billingCycle String  // MONTHLY, YEARLY
+  status      String   @default("active") // active, cancelled, past_due
+  expiresAt   DateTime?
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model PromotedListing {
+  id          String   @id @default(uuid())
+  userId      String
+  listingId   String   @unique
+  coinsSpent  Int
+  activeFrom  DateTime @default(now())
+  activeUntil DateTime
+
+  user        User     @relation(fields: [userId], references: [id])
+  listing     Listing  @relation(fields: [listingId], references: [id])
+}
+
+model Follows {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User @relation("following", fields: [followerId], references: [id])
+  following   User @relation("followers", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
 }

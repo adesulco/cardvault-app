@@ -1,5 +1,6 @@
 // Payment Gateway Abstraction Layer (PGAL)
 // Unified interface for Midtrans, Xendit, Stripe, PayPal
+import Stripe from 'stripe';
 
 export interface ChargeRequest {
   amount: number;
@@ -128,7 +129,7 @@ class StripeProvider implements PaymentGatewayProvider {
     }
 
     // Real Stripe Payment Intent with manual capture (escrow)
-    const stripe = require('stripe')(secretKey);
+    const stripe = new Stripe(secretKey, { apiVersion: "2025-02-24.acacia" } as any);
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(req.amount * 100), // Stripe uses cents
       currency: req.currency.toLowerCase(),
@@ -141,7 +142,7 @@ class StripeProvider implements PaymentGatewayProvider {
       success: true,
       gatewayTransactionId: paymentIntent.id,
       status: 'pending',
-      token: paymentIntent.client_secret,
+      token: paymentIntent.client_secret || undefined,
     };
   }
 
@@ -150,7 +151,7 @@ class StripeProvider implements PaymentGatewayProvider {
     if (!secretKey || secretKey === 'sk_test_xxx') {
       return { success: true, gatewayTransactionId: transactionId, status: 'captured' };
     }
-    const stripe = require('stripe')(secretKey);
+    const stripe = new Stripe(secretKey, { apiVersion: "2025-02-24.acacia" } as any);
     await stripe.paymentIntents.capture(transactionId);
     return { success: true, gatewayTransactionId: transactionId, status: 'captured' };
   }

@@ -28,7 +28,7 @@ export default function SettingsPage() {
       setGateways([
         { id: '1', gatewayName: 'Midtrans', isActive: true, status: 'healthy' },
         { id: '2', gatewayName: 'Xendit', isActive: true, status: 'healthy' },
-        { id: '3', gatewayName: 'Stripe', isActive: false, status: 'degraded' },
+        { id: '3', gatewayName: 'Stripe', isActive: false, status: 'healthy' },
       ]);
     } catch (error) {
       console.error('Failed to fetch gateways:', error);

@@ -20,12 +20,10 @@ export default function MyCollectionPage() {
   useEffect(() => {
     const fetchCards = async () => {
       try {
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/cards?status=' + (statusFilter || 'all'));
-        // const data = await response.json();
-        // setCards(data);
-
-        setCards([]);
+        const response = await fetch('/api/cards?status=' + (statusFilter || 'all'));
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
+        setCards(data.cards || []);
       } catch (error) {
         console.error('Failed to fetch cards:', error);
         setCards([]);

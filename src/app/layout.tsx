@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from 'next';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import LayoutShell from '@/components/LayoutShell';
+import Providers from '@/components/Providers';
+
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export const metadata: Metadata = {
   title: 'CardVault - Secure Trading Card Marketplace',
@@ -11,22 +15,18 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: '#2563EB',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="bg-slate-50 text-slate-900 antialiased" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" }}>
-        <LayoutShell>{children}</LayoutShell>
+      <body className={`bg-gray-100 text-slate-900 antialiased ${jakarta.className}`}>
+        <div className="max-w-md mx-auto min-h-screen bg-slate-50 relative shadow-2xl overflow-x-hidden border-l border-r border-gray-200">
+           <Providers>
+              <LayoutShell>{children}</LayoutShell>
+           </Providers>
+        </div>
       </body>
     </html>
   );

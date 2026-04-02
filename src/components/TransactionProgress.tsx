@@ -3,9 +3,9 @@ import { Check } from 'lucide-react';
 import type { EscrowStatus } from '@/lib/types';
 
 const steps: { key: EscrowStatus[]; label: string }[] = [
-  { key: ['pending_payment'], label: 'Payment' },
-  { key: ['payment_held', 'awaiting_shipment'], label: 'Escrow' },
-  { key: ['shipped'], label: 'Shipped' },
+  { key: ['pending_payment'], label: 'Offer' },
+  { key: ['payment_held', 'awaiting_shipment'], label: 'Vault Held' },
+  { key: ['shipped'], label: 'Shipping' },
   { key: ['delivered', 'under_inspection'], label: 'Inspection' },
   { key: ['completed', 'auto_completed'], label: 'Complete' },
 ];

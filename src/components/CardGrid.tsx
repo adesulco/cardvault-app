@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Heart, Shield } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { formatDualCurrency } from '@/lib/currency';
@@ -35,17 +36,24 @@ export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[
       {cards.map((card) => (
         <Link
           key={card.id}
-          href={card.listingId ? `/marketplace/${card.listingId}` : `/cards/${card.id}`}
-          className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+          href={card.listingId ? `/explore/${card.listingId}` : `/cards/${card.id}`}
+          className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label={`View ${card.condition === 'graded' ? card.grade : ''} ${card.cardName} Listing`}
         >
-          {/* Card Image */}
-          <div className="aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 relative">
+          {/* Card Image Wrapper with Skeleton Pulse Base */}
+          <div className="aspect-[3/4] bg-slate-200 animate-pulse relative overflow-hidden">
             {card.frontImageUrl ? (
-              <img
-                src={card.frontImageUrl}
-                alt={card.cardName}
-                className="w-full h-full object-cover"
-              />
+              <>
+                <div className="absolute inset-0 bg-slate-200 animate-pulse -z-10" />
+                <Image
+                  src={card.frontImageUrl}
+                  alt={card.cardName}
+                  fill
+                  className="object-cover transition-opacity duration-700 opacity-0"
+                  onLoad={(e) => { e.currentTarget.classList.remove('opacity-0'); e.currentTarget.parentElement?.classList.remove('animate-pulse'); }}
+                  sizes="(max-width: 768px) 50vw, 33vw"
+                />
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400">
                 <span className="text-4xl">🃏</span>
@@ -60,9 +68,10 @@ export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[
             {/* Favorite */}
             <button
               onClick={(e) => { e.preventDefault(); }}
-              className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full"
+              className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full hover:bg-rose-50 transition-colors group focus:ring-2 focus:ring-blue-500"
+              aria-label="Add to Favorites"
             >
-              <Heart size={14} className="text-gray-500" />
+              <Heart size={14} className="text-gray-500 group-hover:text-rose-500 transition-colors" />
             </button>
           </div>
 
@@ -78,11 +87,20 @@ export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[
               </div>
             )}
             {card.seller && (
-              <div className="flex items-center gap-1 mt-1.5">
-                <Shield size={10} className="text-green-500" />
-                <span className="text-[10px] text-gray-500">
+              <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                <Shield 
+                  size={10} 
+                  className={card.seller.trustScore > 90 ? "text-yellow-500 fill-yellow-500" : "text-green-500"} 
+                />
+                <span className="text-[10px] text-gray-500 truncate">
                   {card.seller.displayName || 'Seller'} · ★ {card.seller.trustScore.toFixed(1)}
                 </span>
+                {card.seller.trustScore > 90 && (
+                  <span className="text-[8px] font-bold bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-sm flex items-center shadow-sm">
+                    {/* Gamified visual badge */}
+                    TRUSTED
+                  </span>
+                )}
               </div>
             )}
           </div>

@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
+const adminSecret = process.env.ADMIN_JWT_SECRET;
+if (!adminSecret && process.env.NODE_ENV === 'production') {
+  console.warn('CRITICAL: ADMIN_JWT_SECRET is not set in production!');
+}
+
 const SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'cardvault-admin-secret-key-2024'
+  adminSecret || 'development-fallback-only-secret-2024'
 );
 
 export async function verifyAdminAuth(request: NextRequest) {

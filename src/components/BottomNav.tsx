@@ -5,7 +5,7 @@ import { Home, Search, PlusCircle, MessageCircle, User } from 'lucide-react';
 
 const tabs = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/marketplace', label: 'Explore', icon: Search },
+  { href: '/explore', label: 'Explore', icon: Search },
   { href: '/cards/new', label: 'Sell', icon: PlusCircle },
   { href: '/messages', label: 'Messages', icon: MessageCircle },
   { href: '/profile', label: 'Profile', icon: User },

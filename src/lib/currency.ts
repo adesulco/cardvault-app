@@ -35,15 +35,16 @@ export async function getExchangeRate(): Promise<number> {
 }
 
 export function idrToUsd(idrAmount: number, rate: number): number {
-  return Math.round((idrAmount / rate) * 100) / 100;
+  return Math.floor((idrAmount / rate) * 100) / 100;
 }
 
 export function usdToIdr(usdAmount: number, rate: number): number {
-  return Math.round((usdAmount * rate) / 100) * 100; // Round to nearest Rp 100
+  return Math.floor((usdAmount * rate) / 100) * 100; // Hard round down to nearest Rp 100 for escrow safety
 }
 
 export function formatIDR(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
+  // Using en-US forces ',' for thousands and '.' for decimals while retaining IDR symbol
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
@@ -102,8 +103,8 @@ export function calculateFees(
   const internationalSurcharge = isInternational ? 0.01 : 0;
   const totalRate = feeRate + internationalSurcharge;
 
-  const buyerFeeIdr = Math.round((priceIdr * totalRate) / 100) * 100;
-  const sellerFeeIdr = Math.round((priceIdr * totalRate) / 100) * 100;
+  const buyerFeeIdr = Math.floor((priceIdr * totalRate) / 100) * 100;
+  const sellerFeeIdr = Math.floor((priceIdr * totalRate) / 100) * 100;
 
   return {
     buyerFeeIdr,

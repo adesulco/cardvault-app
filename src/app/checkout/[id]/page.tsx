@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Shield, Lock } from 'lucide-react';
 import PriceDisplay from '@/components/PriceDisplay';
 import PaymentMethodSelector from '@/components/PaymentMethodSelector';
@@ -14,29 +14,97 @@ export default function CheckoutPage() {
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [selectedGateway, setSelectedGateway] = useState<string>('midtrans');
   const [processing, setProcessing] = useState(false);
-  const [step, setStep] = useState<'review' | 'payment' | 'confirmation'>('review');
+  const [step, setStep] = useState<'review' | 'payment' | 'offer' | 'confirmation'>('review');
+  const [offerAmount, setOfferAmount] = useState<string>('');
 
-  // Demo listing
-  const listing = {
-    cardName: 'Charizard VMAX',
-    gradingCompany: 'PSA',
-    grade: '10',
-    seller: 'TokyoCards',
-    priceIdr: 25000000,
-  };
+  const params = useParams();
+  const listingId = params?.id as string;
+  const [listing, setListing] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!listingId) return;
+    fetch(`/api/listings/${listingId}`)
+      .then(res => res.json())
+      .then(data => {
+        setListing(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, [listingId]);
 
   const fees = calculateFees(listing.priceIdr, 'sale', false);
   const totalIdr = fees.totalIdr;
   const totalUsd = idrToUsd(totalIdr, exchangeRate);
 
-  const handlePayment = () => {
-    if (!selectedPayment) return;
+  const handlePayment = async () => {
+    if (!selectedPayment || !listing) return;
     setProcessing(true);
-    setTimeout(() => {
+    
+    try {
+      const tx = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sellerId: listing.sellerId,
+          listingId: listing.id,
+          priceIdr: listing.priceIdr,
+          buyerFeeIdr: fees.buyerFeeIdr,
+          totalIdr: totalIdr,
+          paymentGateway: selectedGateway,
+          paymentMethodType: selectedPayment
+        })
+      });
+      if (tx.ok) {
+        setStep('confirmation');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
       setProcessing(false);
-      setStep('confirmation');
-    }, 2000);
+    }
   };
+
+  const handleOfferSubmit = async () => {
+    if (!offerAmount || !listing) return;
+    setProcessing(true);
+    try {
+      const res = await fetch('/api/offers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId: listing.id,
+          fromUserId: 'mock-buyer-id-999', // beta fallback
+          offerAmountIdr: parseInt(offerAmount),
+          offerAmountUsd: idrToUsd(parseInt(offerAmount), exchangeRate)
+        })
+      });
+
+      const json = await res.json();
+      if (res.ok) {
+        setStep('confirmation');
+      } else {
+        alert(json.error || 'Failed to submit offer');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!listing) return <div className="text-center py-20 text-gray-500">Listing not found.</div>;
 
   if (step === 'confirmation') {
     return (
@@ -44,19 +112,23 @@ export default function CheckoutPage() {
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
           <Shield size={36} className="text-green-600" />
         </div>
-        <h1 className="text-xl font-bold text-gray-900">Payment Secured!</h1>
+        <h1 className="text-xl font-bold text-gray-900">
+          {step === 'confirmation' && offerAmount ? 'Offer Submitted!' : 'Payment Secured!'}
+        </h1>
         <p className="text-sm text-gray-500 mt-2 max-w-xs">
-          Your payment of {formatIDR(totalIdr)} is now held in escrow. The seller has been notified to ship your card.
+          {offerAmount 
+            ? `Your offer of ${formatIDR(parseInt(offerAmount))} has been sent. The seller has 24 hours to respond.`
+            : `Your payment of ${formatIDR(totalIdr)} is now held in escrow. The seller has been notified to ship.`}
         </p>
         <div className="w-full mt-6 space-y-3">
           <button
             onClick={() => router.push('/transactions')}
             className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-sm"
           >
-            View Transaction
+            Go to Dashboard
           </button>
           <button
-            onClick={() => router.push('/marketplace')}
+            onClick={() => router.push('/explore')}
             className="w-full py-3.5 bg-gray-100 text-gray-700 rounded-xl font-semibold text-sm"
           >
             Continue Shopping
@@ -70,11 +142,11 @@ export default function CheckoutPage() {
     <div className="pb-32">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <button onClick={() => step === 'payment' ? setStep('review') : router.back()} className="p-1 text-gray-600">
+        <button onClick={() => step !== 'review' ? setStep('review') : router.back()} className="p-1 text-gray-600">
           <ArrowLeft size={22} />
         </button>
         <h1 className="text-lg font-bold text-gray-900">
-          {step === 'review' ? 'Order Review' : 'Payment'}
+          {step === 'review' ? 'Order Review' : step === 'offer' ? 'Make Offer' : 'Payment'}
         </h1>
       </div>
 
@@ -106,9 +178,9 @@ export default function CheckoutPage() {
                   🃏
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900">{listing.cardName}</p>
-                  <p className="text-xs text-gray-500">{listing.gradingCompany} {listing.grade}</p>
-                  <p className="text-xs text-gray-500">Seller: {listing.seller}</p>
+                  <p className="text-sm font-semibold text-gray-900">{listing.card?.cardName || listing.cardName}</p>
+                  <p className="text-xs text-gray-500">{listing.card?.gradingCompany || listing.gradingCompany} {listing.card?.grade || listing.grade}</p>
+                  <p className="text-xs text-gray-500">Seller: {listing.seller?.displayName || listing.seller}</p>
                 </div>
               </div>
 
@@ -153,13 +225,48 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <button
-              onClick={() => setStep('payment')}
-              className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors"
-            >
-              Proceed to Payment
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep('payment')}
+                className="flex-1 py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors"
+              >
+                Instant Buy
+              </button>
+              {listing.isBestOfferEnabled && (
+                <button
+                  onClick={() => setStep('offer')}
+                  className="flex-1 py-3.5 bg-blue-50 text-blue-700 border-2 border-blue-200 rounded-xl font-semibold text-sm transition-colors"
+                >
+                  Make Offer
+                </button>
+              )}
+            </div>
           </>
+        )}
+
+        {step === 'offer' && (
+          <div className="bg-white rounded-xl border border-gray-200 p-5 mt-4">
+             <h2 className="text-sm font-semibold text-gray-900 mb-2">Propose your price</h2>
+             <p className="text-xs text-gray-500 mb-4">The seller has 24 hours to accept, reject, or counter your offer.</p>
+             <div className="relative mb-6">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">Rp</span>
+                <input
+                  type="number"
+                  value={offerAmount}
+                  onChange={e => setOfferAmount(e.target.value)}
+                  placeholder="0"
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-lg font-bold text-gray-900 focus:border-blue-500"
+                />
+             </div>
+
+             <button
+               onClick={handleOfferSubmit}
+               disabled={!offerAmount || processing}
+               className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-sm disabled:opacity-50 flex items-center justify-center"
+             >
+               {processing ? 'Submitting...' : 'Submit Binding Offer'}
+             </button>
+          </div>
         )}
 
         {step === 'payment' && (

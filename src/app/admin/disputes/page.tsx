@@ -1,40 +1,20 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { ChevronDown, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, Gavel, CheckCircle, RefreshCw, Undo2, Copy } from 'lucide-react';
 
-interface Dispute {
-  id: string;
-  transactionId: string;
-  transaction: { id: string; agreedPriceIdr: number };
-  openedBy: { id: string; email: string; displayName: string };
-  reason: string;
-  description: string;
-  evidenceUrls: string;
-  resolution: string;
-  refundAmountIdr: number;
-  resolutionNotes: string;
-  createdAt: string;
-}
-
-export default function DisputesPage() {
-  const [disputes, setDisputes] = useState<Dispute[]>([]);
+export default function AdminDisputes() {
+  const [disputes, setDisputes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [selectedResolution, setSelectedResolution] = useState<Record<string, string>>({});
-  const [resolutionNotes, setResolutionNotes] = useState<Record<string, string>>({});
-  const [refundAmount, setRefundAmount] = useState<Record<string, string>>({});
-  const [resolving, setResolving] = useState<string | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
 
   const fetchDisputes = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/disputes');
-      if (res.ok) {
-        const data = await res.json();
-        setDisputes(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch disputes:', error);
+      const res = await fetch('/api/disputes');
+      const data = await res.json();
+      setDisputes(data.disputes || []);
+    } catch {
+      console.error('Failed to fetch disputes');
     } finally {
       setLoading(false);
     }
@@ -44,258 +24,128 @@ export default function DisputesPage() {
     fetchDisputes();
   }, []);
 
-  const handleResolveDispute = async (disputeId: string) => {
-    const resolution = selectedResolution[disputeId];
-    if (!resolution) {
-      alert('Please select a resolution');
-      return;
-    }
-
-    setResolving(disputeId);
+  const handleResolve = async (disputeId: string, action: 'refund_buyer' | 'release_seller') => {
+    if (!confirm(`Are you sure you want to rigorously enforce a ${action.replace('_', ' ').toUpperCase()} verdict? This permanently redirects Escrow cash flow.`)) return;
+    
+    setResolvingId(disputeId);
     try {
-      const res = await fetch('/api/admin/disputes', {
+      const res = await fetch('/api/disputes', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: disputeId,
-          resolution,
-          resolutionNotes: resolutionNotes[disputeId] || null,
-          refundAmountIdr: refundAmount[disputeId] ? parseFloat(refundAmount[disputeId]) : null,
-        }),
+        body: JSON.stringify({ disputeId, resolution: action })
       });
-
-      if (res.ok) {
-        fetchDisputes();
-        setSelectedResolution((prev) => {
-          const next = { ...prev };
-          delete next[disputeId];
-          return next;
-        });
-        setResolutionNotes((prev) => {
-          const next = { ...prev };
-          delete next[disputeId];
-          return next;
-        });
-        setRefundAmount((prev) => {
-          const next = { ...prev };
-          delete next[disputeId];
-          return next;
-        });
-        setExpandedId(null);
-      }
-    } catch (error) {
-      console.error('Failed to resolve dispute:', error);
-      alert('Failed to resolve dispute');
+      if (res.ok) fetchDisputes();
+      else alert('Failed executing ruling');
+    } catch {
+       alert('Verification network failed');
     } finally {
-      setResolving(null);
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: '2-digit' });
-  };
-
-  const getResolutionColor = (resolution: string) => {
-    switch (resolution) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'refund_buyer':
-        return 'bg-red-100 text-red-800';
-      case 'release_seller':
-        return 'bg-emerald-100 text-emerald-800';
-      case 'partial_refund':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-slate-100 text-slate-800';
+       setResolvingId(null);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Disputes</h1>
-        <p className="text-sm text-slate-500">Manage and resolve buyer-seller disputes</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 border-l-4 border-rose-600 pl-3">Fraud & Damage Disputes</h1>
+          <p className="text-sm text-gray-500 mt-1 pl-4">Platform Escrow Intervention Terminal</p>
+        </div>
+        <button onClick={fetchDisputes} className="p-2 text-gray-500 hover:bg-gray-200 rounded-lg transition-colors">
+          <RefreshCw size={18} className={loading ? 'animate-spin text-blue-600' : ''} />
+        </button>
       </div>
 
-      {/* Disputes Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        {loading ? (
-          <div className="p-6 text-center">
-            <p className="text-sm text-slate-500">Loading disputes...</p>
-          </div>
-        ) : disputes.length === 0 ? (
-          <div className="p-12 text-center">
-            <AlertTriangle size={32} className="mx-auto text-slate-300 mb-3" />
-            <p className="text-sm font-medium text-slate-900 mb-1">No open disputes</p>
-            <p className="text-xs text-slate-500">Disputes will appear here when buyers or sellers report issues</p>
-          </div>
-        ) : (
-          <div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase">ID</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase">Trans ID</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase">Opened By</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase">Reason</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase">Date</th>
-                    <th className="text-center py-3 px-4 text-xs font-medium text-slate-600 uppercase">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {disputes.map((dispute) => (
-                    <tbody key={dispute.id}>
-                      <tr className="hover:bg-slate-50">
-                        <td className="py-3 px-4 text-xs font-mono text-slate-600">{dispute.id.slice(0, 8)}...</td>
-                        <td className="py-3 px-4 text-xs font-mono text-slate-600">{dispute.transactionId.slice(0, 8)}...</td>
-                        <td className="py-3 px-4 text-xs text-slate-600">{dispute.openedBy.displayName || dispute.openedBy.email}</td>
-                        <td className="py-3 px-4 text-xs text-slate-600 capitalize">{dispute.reason.replace(/_/g, ' ')}</td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getResolutionColor(dispute.resolution)}`}>
-                            {dispute.resolution}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-xs text-slate-500">{formatDate(dispute.createdAt)}</td>
-                        <td className="py-3 px-4 text-center">
-                          <button
-                            onClick={() => setExpandedId(expandedId === dispute.id ? null : dispute.id)}
-                            className="inline-flex items-center justify-center p-1 hover:bg-slate-200 rounded"
-                          >
-                            <ChevronDown size={16} className={`transition-transform ${expandedId === dispute.id ? 'rotate-180' : ''}`} />
-                          </button>
-                        </td>
-                      </tr>
+      {loading && disputes.length === 0 ? (
+        <div className="p-12 text-center text-gray-500">Loading Active Frauds...</div>
+      ) : disputes.length === 0 ? (
+         <div className="bg-green-50 border border-green-200 p-8 rounded-xl text-center">
+            <CheckCircle size={40} className="mx-auto text-green-600 mb-3" />
+            <h3 className="font-bold text-green-900">Zero Active Escalations</h3>
+            <p className="text-sm text-green-700">All P2P marketplace escrows are running harmoniously with zero buyer reports!</p>
+         </div>
+      ) : (
+        <div className="grid gap-6">
+          {disputes.map(d => {
+             const isResolved = d.resolution !== 'pending';
+             const amtIdr = d.transaction.agreedPriceIdr || d.transaction.buyerPaidAmount || 0;
+             const targetColor = isResolved ? 'bg-slate-50 border-slate-200' : 'bg-rose-50 border-rose-200';
 
-                      {/* Expanded Details */}
-                      {expandedId === dispute.id && dispute.resolution === 'pending' && (
-                        <tr className="bg-slate-50 border-b border-slate-200">
-                          <td colSpan={7} className="p-4">
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <label className="text-xs font-medium text-slate-700">Description</label>
-                                  <p className="mt-1 text-sm text-slate-600">{dispute.description || 'No description provided'}</p>
-                                </div>
-                                <div>
-                                  <label className="text-xs font-medium text-slate-700">Transaction Amount</label>
-                                  <p className="mt-1 text-sm font-medium text-slate-900">{formatCurrency(dispute.transaction.agreedPriceIdr)}</p>
-                                </div>
-                              </div>
+             return (
+               <div key={d.id} className={`border p-6 rounded-2xl shadow-sm ${targetColor}`}>
+                  <div className="flex flex-col md:flex-row justify-between gap-4">
+                     
+                     {/* Left Summary Block */}
+                     <div className="flex-1 space-y-4">
+                        <div className="flex items-center gap-2">
+                           <ShieldAlert className={isResolved ? 'text-slate-400' : 'text-rose-600 animate-pulse'} size={20} />
+                           <span className={`text-xs font-black uppercase tracking-widest px-2 py-0.5 rounded-sm ${isResolved ? 'bg-slate-200 text-slate-700' : 'bg-rose-600 text-white'}`}>
+                              {d.reason.replace(/_/g, ' ')}
+                           </span>
+                           <span className="text-[10px] text-gray-500 font-mono flex items-center gap-1 group cursor-pointer hover:text-black">
+                              ID: {d.id.split('-')[0]} <Copy size={10} className="opacity-0 group-hover:opacity-100" />
+                           </span>
+                        </div>
 
-                              <div className="pt-2 border-t border-slate-200 space-y-3">
-                                <div>
-                                  <label className="text-xs font-medium text-slate-700">Resolution</label>
-                                  <select
-                                    value={selectedResolution[dispute.id] || ''}
-                                    onChange={(e) =>
-                                      setSelectedResolution((prev) => ({
-                                        ...prev,
-                                        [dispute.id]: e.target.value,
-                                      }))
-                                    }
-                                    className="mt-1 w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  >
-                                    <option value="">Select resolution...</option>
-                                    <option value="refund_buyer">Refund Buyer</option>
-                                    <option value="release_seller">Release to Seller</option>
-                                    <option value="partial_refund">Partial Refund</option>
-                                    <option value="cancelled">Cancelled</option>
-                                  </select>
-                                </div>
+                        <div className="bg-white p-4 rounded-xl border border-rose-100/50">
+                           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Buyer Testimony</h4>
+                           <p className="text-sm font-medium text-gray-800 italic leading-relaxed">"{d.description}"</p>
+                        </div>
 
-                                {selectedResolution[dispute.id] === 'partial_refund' && (
-                                  <div>
-                                    <label className="text-xs font-medium text-slate-700">Refund Amount (IDR)</label>
-                                    <input
-                                      type="number"
-                                      value={refundAmount[dispute.id] || ''}
-                                      onChange={(e) =>
-                                        setRefundAmount((prev) => ({
-                                          ...prev,
-                                          [dispute.id]: e.target.value,
-                                        }))
-                                      }
-                                      placeholder="Enter refund amount"
-                                      className="mt-1 w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                  </div>
-                                )}
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                           <div>
+                              <p className="text-gray-500">Card In Dispute</p>
+                              <p className="font-bold text-gray-900 truncate">{d.transaction.listing?.card?.cardName}</p>
+                           </div>
+                           <div>
+                              <p className="text-gray-500">Froze Escrow Value</p>
+                              <p className="font-bold text-blue-600 font-mono">Rp {amtIdr.toLocaleString('id-ID')}</p>
+                           </div>
+                        </div>
+                     </div>
 
-                                <div>
-                                  <label className="text-xs font-medium text-slate-700">Resolution Notes</label>
-                                  <textarea
-                                    value={resolutionNotes[dispute.id] || ''}
-                                    onChange={(e) =>
-                                      setResolutionNotes((prev) => ({
-                                        ...prev,
-                                        [dispute.id]: e.target.value,
-                                      }))
-                                    }
-                                    placeholder="Add resolution notes..."
-                                    className="mt-1 w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    rows={3}
-                                  />
-                                </div>
+                     {/* Intercept Terminal Block */}
+                     <div className="w-full md:w-64 bg-white rounded-xl border border-gray-200 p-4 shadow-sm flex flex-col justify-between">
+                        <div>
+                           <div className="flex items-center justify-between mb-3 text-xs">
+                              <span className="text-gray-500">Seller</span>
+                              <span className="font-bold text-gray-900 truncate w-24 text-right">{d.transaction.seller.displayName}</span>
+                           </div>
+                           <div className="flex items-center justify-between mb-4 border-b pb-4 text-xs">
+                              <span className="text-gray-500">Buyer</span>
+                              <span className="font-bold text-gray-900 truncate w-24 text-right">{d.transaction.buyer.displayName}</span>
+                           </div>
+                        </div>
 
-                                <div className="flex gap-2 justify-end pt-2">
-                                  <button
-                                    onClick={() => setExpandedId(null)}
-                                    className="px-3 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
-                                  >
-                                    Cancel
-                                  </button>
-                                  <button
-                                    onClick={() => handleResolveDispute(dispute.id)}
-                                    disabled={resolving === dispute.id || !selectedResolution[dispute.id]}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                                  >
-                                    {resolving === dispute.id ? 'Resolving...' : 'Resolve Dispute'}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
+                        {isResolved ? (
+                           <div className="bg-slate-100 p-3 rounded-xl border border-slate-200 text-center text-sm font-semibold text-slate-700">
+                             Verdict Settled: <span className="uppercase">{d.resolution}</span>
+                           </div>
+                        ) : (
+                           <div className="space-y-2 mt-auto">
+                              <button 
+                                onClick={() => handleResolve(d.id, 'refund_buyer')} 
+                                disabled={resolvingId === d.id}
+                                className="w-full flex justify-center items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-lg text-xs transition-colors shadow-sm disabled:opacity-50"
+                              >
+                                 <Undo2 size={16} /> Force Refund Buyer (Win)
+                              </button>
+                              <button 
+                                onClick={() => handleResolve(d.id, 'release_seller')} 
+                                disabled={resolvingId === d.id}
+                                className="w-full flex justify-center items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-xs transition-colors shadow-sm disabled:opacity-50"
+                              >
+                                 <Gavel size={16} /> Release To Seller (Win)
+                              </button>
+                           </div>
+                        )}
+                     </div>
 
-                      {/* Expanded Details - Resolved */}
-                      {expandedId === dispute.id && dispute.resolution !== 'pending' && (
-                        <tr className="bg-slate-50 border-b border-slate-200">
-                          <td colSpan={7} className="p-4">
-                            <div className="space-y-2">
-                              <div>
-                                <label className="text-xs font-medium text-slate-700">Description</label>
-                                <p className="mt-1 text-sm text-slate-600">{dispute.description || 'No description'}</p>
-                              </div>
-                              {dispute.resolutionNotes && (
-                                <div>
-                                  <label className="text-xs font-medium text-slate-700">Resolution Notes</label>
-                                  <p className="mt-1 text-sm text-slate-600">{dispute.resolutionNotes}</p>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
+                  </div>
+               </div>
+             );
+          })}
+        </div>
+      )}
     </div>
   );
 }

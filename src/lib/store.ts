@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface AppState {
   preferredCurrency: 'IDR' | 'USD';
@@ -9,6 +10,7 @@ interface AppState {
     displayName: string | null;
     avatarUrl: string | null;
     role: string;
+    kycStatus: string;
     countryCode: string;
     preferredCurrency: 'IDR' | 'USD';
   } | null;
@@ -19,13 +21,20 @@ interface AppState {
   logout: () => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
-  preferredCurrency: 'IDR',
-  exchangeRate: 15850,
-  user: null,
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
+      preferredCurrency: 'IDR',
+      exchangeRate: 15850,
+      user: null,
 
-  setCurrency: (currency) => set({ preferredCurrency: currency }),
-  setExchangeRate: (rate) => set({ exchangeRate: rate }),
-  setUser: (user) => set({ user, preferredCurrency: user?.preferredCurrency || 'IDR' }),
-  logout: () => set({ user: null }),
-}));
+      setCurrency: (currency) => set({ preferredCurrency: currency }),
+      setExchangeRate: (rate) => set({ exchangeRate: rate }),
+      setUser: (user) => set({ user, preferredCurrency: user?.preferredCurrency || 'IDR' }),
+      logout: () => set({ user: null }),
+    }),
+    {
+      name: 'cardvault-auth-storage',
+    }
+  )
+);

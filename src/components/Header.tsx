@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Bell, ChevronDown } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
@@ -8,6 +8,23 @@ import BrandLogo from '@/components/BrandLogo';
 export default function Header() {
   const { preferredCurrency, setCurrency, user } = useAppStore();
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchUnread = () => {
+      fetch(`/api/notifications?userId=${user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.unreadCount !== undefined) setUnreadCount(data.unreadCount);
+        })
+        .catch(() => {});
+    };
+    
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000); // 10s poll
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-100">
@@ -56,7 +73,11 @@ export default function Header() {
           {/* Notifications */}
           <Link href="/notifications" className="relative p-2 text-slate-600 hover:text-slate-900">
             <Bell size={22} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            {unreadCount > 0 && (
+              <span className="absolute top-0 right-0 min-w-[14px] h-[14px] flex items-center justify-center bg-red-500 border-2 border-white rounded-full text-[8px] font-bold text-white px-0.5">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </Link>
         </div>
       </div>

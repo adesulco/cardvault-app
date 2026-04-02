@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
       openDisputes,
       activeListings,
       totalTransactions,
+      pendingWithdrawals,
       recentTransactions,
       recentUsers,
     ] = await Promise.all([
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
       prisma.dispute.count({ where: { resolution: 'pending' } }),
       prisma.listing.count({ where: { status: 'active' } }),
       prisma.transaction.count(),
+      prisma.withdrawalRequest.count({ where: { status: 'pending' } }),
       prisma.transaction.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
@@ -72,6 +74,7 @@ export async function GET(request: NextRequest) {
       activeListings,
       totalTransactions,
       totalRevenue,
+      pendingWithdrawals,
       escrowBalance: 0,
       totalVolume30d: 0,
       feesCollected30d: 0,
