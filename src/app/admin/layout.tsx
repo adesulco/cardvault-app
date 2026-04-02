@@ -187,7 +187,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="border-t border-slate-700 p-4 space-y-3">
             <div>
               <p className="text-xs text-slate-400 mb-2 truncate">{user.email}</p>
-              <p className="text-[10px] text-slate-500 font-mono" aria-hidden="true">admin.cardvault.id v0.71</p>
+              <p className="text-[10px] text-slate-500 font-mono" aria-hidden="true">admin.cardvault.id v0.72</p>
             </div>
             <button
               onClick={handleLogout}

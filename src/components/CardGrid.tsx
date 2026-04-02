@@ -45,13 +45,17 @@ export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[
             {card.frontImageUrl ? (
               <>
                 <div className="absolute inset-0 bg-slate-200 animate-pulse -z-10" />
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={card.frontImageUrl}
                   alt={card.cardName}
-                  fill
-                  className="object-cover transition-opacity duration-700 opacity-0"
+                  className="w-full h-full object-cover transition-opacity duration-700 opacity-0"
                   onLoad={(e) => { e.currentTarget.classList.remove('opacity-0'); e.currentTarget.parentElement?.classList.remove('animate-pulse'); }}
-                  sizes="(max-width: 768px) 50vw, 33vw"
+                  onError={(e) => {
+                     e.currentTarget.src = '/fallback-card.png';
+                     e.currentTarget.classList.remove('opacity-0');
+                     e.currentTarget.parentElement?.classList.remove('animate-pulse');
+                  }}
                 />
               </>
             ) : (
@@ -77,7 +81,7 @@ export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[
 
           {/* Card Info */}
           <div className="p-2.5">
-            <h3 className="text-sm font-semibold text-gray-900 truncate">{card.cardName}</h3>
+            <h3 className="text-sm font-semibold text-gray-900 truncate" title={card.cardName}>{card.cardName}</h3>
             {card.playerOrCharacter && (
               <p className="text-xs text-gray-500 truncate">{card.playerOrCharacter}</p>
             )}
@@ -92,8 +96,8 @@ export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[
                   size={10} 
                   className={card.seller.trustScore > 90 ? "text-yellow-500 fill-yellow-500" : "text-green-500"} 
                 />
-                <span className="text-[10px] text-gray-500 truncate">
-                  {card.seller.displayName || 'Seller'} · ★ {card.seller.trustScore.toFixed(1)}
+                <span className="text-[10px] text-gray-500 truncate" title={card.seller.displayName || 'Seller'}>
+                  {card.seller.displayName || 'Seller'}{card.seller.trustScore > 0 ? ` · ★ ${card.seller.trustScore.toFixed(1)}` : ''}
                 </span>
                 {card.seller.trustScore > 90 && (
                   <span className="text-[8px] font-bold bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-sm flex items-center shadow-sm">

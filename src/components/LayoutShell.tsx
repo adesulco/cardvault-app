@@ -21,10 +21,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   }, [user, pathname, isAdmin, isGate, router]);
 
   useEffect(() => {
-    // Initialize Offline Capabilities (PWA)
-    if ('serviceWorker' in navigator) {
-       navigator.serviceWorker.register('/sw.js').catch(err => console.error('PWA Worker rejected', err));
-    }
+    // Service Worker currently deferred
   }, []);
 
   useEffect(() => {
@@ -70,7 +67,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <main className="pt-14 pb-20 min-h-screen flex flex-col justify-between">
         <div className="flex-1">{children}</div>
         <div className="text-center pt-8 pb-4 text-[10px] text-slate-400 font-mono tracking-widest uppercase" aria-hidden="true">
-           CardVault Build v0.71
+           CardVault Build v0.72
         </div>
       </main>
       {user && <BottomNav />}

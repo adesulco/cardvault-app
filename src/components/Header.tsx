@@ -5,6 +5,7 @@ import { Bell, ChevronDown } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import BrandLogo from '@/components/BrandLogo';
 
+let activeNotifPromise: Promise<any> | null = null;
 let lastNotifFetch = 0;
 
 export default function Header() {
@@ -14,22 +15,26 @@ export default function Header() {
 
   useEffect(() => {
     if (!user?.id) return;
+    let isMounted = true;
     const fetchUnread = () => {
       const now = Date.now();
       if (now - lastNotifFetch < 4000) return; // Hard deduplication cutoff
-      lastNotifFetch = now;
 
-      fetch(`/api/notifications?userId=${user.id}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.unreadCount !== undefined) setUnreadCount(data.unreadCount);
+      if (!activeNotifPromise) {
+         activeNotifPromise = fetch(`/api/notifications?userId=${user.id}`).then(res => res.json());
+      }
+      
+      activeNotifPromise.then(data => {
+          if (isMounted && data.unreadCount !== undefined) setUnreadCount(data.unreadCount);
+          lastNotifFetch = Date.now();
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => { activeNotifPromise = null; });
     };
     
     fetchUnread();
     const interval = setInterval(fetchUnread, 10000); // 10s poll
-    return () => clearInterval(interval);
+    return () => { isMounted = false; clearInterval(interval); };
   }, [user?.id]);
 
   return (

@@ -51,7 +51,7 @@ export default function HomePage() {
               homeData.banners.map((banner: any) => (
                  <a key={banner.id} href={banner.linkUrl} className="snap-start shrink-0 w-[95%] md:w-[85%] rounded-[16px] overflow-hidden shadow-sm relative block">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={banner.imageUrl} alt={banner.altText || ''} className="w-full h-full object-cover shrink-0 aspect-[21/9]" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; }} />
+                    <img src={banner.imageUrl} alt={banner.altText || ''} className="w-full h-full object-cover shrink-0 aspect-[21/9]" onError={(e) => { e.currentTarget.src = '/fallback-card.png'; }} />
                  </a>
               ))
            ) : (
@@ -144,21 +144,21 @@ export default function HomePage() {
                        <div className="w-full aspect-[3/4] bg-gray-100 relative">
                           {listing.card?.frontImageUrl ? (
                              // eslint-disable-next-line @next/next/no-img-element
-                             <img src={listing.card.frontImageUrl} className="w-full h-full object-cover shrink-0" alt="" />
+                             <img src={listing.card.frontImageUrl} className="w-full h-full object-cover shrink-0" alt="" onError={(e) => { e.currentTarget.src = '/fallback-card.png'; }} />
                           ) : (
                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs font-bold shrink-0">No Image</div>
                           )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                        </div>
                        <div className="p-3">
-                          <p className="text-[14px] font-bold text-gray-900 leading-tight line-clamp-1">{listing.card?.cardName}</p>
+                          <p className="text-[14px] font-bold text-gray-900 leading-tight line-clamp-1" title={listing.card?.cardName}>{listing.card?.cardName}</p>
                           <p className="text-[11px] font-semibold text-blue-600 mt-1 uppercase tracking-tight">Rp {listing.priceIdr?.toLocaleString('id-ID')}</p>
                           <div className="mt-3 flex items-center gap-2 pt-2 border-t border-gray-100">
                              <div className="w-5 h-5 rounded-full bg-gray-200 overflow-hidden shrink-0 flex items-center justify-center text-[8px] font-bold">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 {listing.seller?.avatarUrl ? <img src={listing.seller.avatarUrl} className="shrink-0" /> : listing.seller?.displayName?.[0]}
                              </div>
-                             <p className="text-[10px] text-gray-500 font-medium truncate">Vault: {listing.seller?.displayName}</p>
+                             <p className="text-[10px] text-gray-500 font-medium truncate" title={`Vault: ${listing.seller?.displayName}`}>Vault: {listing.seller?.displayName}</p>
                           </div>
                        </div>
                     </Link>
@@ -184,21 +184,21 @@ export default function HomePage() {
                        <div className="w-full aspect-[4/5] bg-gray-100 relative">
                           {listing.card?.frontImageUrl ? (
                              // eslint-disable-next-line @next/next/no-img-element
-                             <img src={listing.card.frontImageUrl} className="w-full h-full object-cover shrink-0" alt="" />
+                             <img src={listing.card.frontImageUrl} className="w-full h-full object-cover shrink-0" alt="" onError={(e) => { e.currentTarget.src = '/fallback-card.png'; }} />
                           ) : (
                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs font-bold shrink-0">No Image</div>
                           )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                        </div>
                        <div className="p-3">
-                          <p className="text-[13px] font-bold text-gray-900 leading-tight line-clamp-1">{listing.card?.cardName}</p>
+                          <p className="text-[13px] font-bold text-gray-900 leading-tight line-clamp-1" title={listing.card?.cardName}>{listing.card?.cardName}</p>
                           <p className="text-[11px] font-semibold text-blue-600 mt-1 uppercase tracking-tight">Rp {listing.priceIdr?.toLocaleString('id-ID')}</p>
                           <div className="mt-2 flex items-center gap-2 pt-2 border-t border-gray-100">
                              <div className="w-4 h-4 rounded-full bg-gray-200 overflow-hidden shrink-0 flex items-center justify-center text-[7px] font-bold">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 {listing.seller?.avatarUrl ? <img src={listing.seller.avatarUrl} className="shrink-0" /> : listing.seller?.displayName?.[0]}
                              </div>
-                             <p className="text-[9px] text-gray-500 font-medium truncate">{listing.seller?.displayName}</p>
+                             <p className="text-[9px] text-gray-500 font-medium truncate" title={listing.seller?.displayName}>{listing.seller?.displayName}</p>
                           </div>
                        </div>
                     </Link>

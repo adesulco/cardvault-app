@@ -121,7 +121,13 @@ export default function FinancialsPage() {
             <p className="text-sm">No transaction data available yet</p>
           </div>
         ) : (
-          <div className="h-64 bg-slate-50 rounded-lg flex items-end justify-between px-6 pb-4 pt-10 gap-2 border border-slate-100 overflow-hidden relative" aria-label="Transaction Chart">
+          <div className="h-64 bg-slate-50 rounded-lg flex items-end justify-between px-10 pb-6 pt-10 gap-2 border border-slate-100 overflow-hidden relative" aria-label="Transaction Chart">
+             {/* Y-Axis Label */}
+             <div className="absolute left-2 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-bold text-slate-400 uppercase tracking-widest origin-center whitespace-nowrap">Volume (IDR)</div>
+             
+             {/* X-Axis Label */}
+             <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Recent Transactions</div>
+             
              {data.recentTransactions.slice(0, 30).reverse().map((tx, idx) => {
                 const amount = tx.agreedPriceIdr || tx.agreedPriceUsd || 0;
                 const maxAmount = Math.max(...data.recentTransactions.map(t => (t.agreedPriceIdr || t.agreedPriceUsd || 100000)));
