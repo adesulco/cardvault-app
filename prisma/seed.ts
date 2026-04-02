@@ -63,7 +63,61 @@ async function main() {
       });
     }
 
-    console.log('Successfully seeded 10 highly graded PSA mock listings to TokyoCards!');
+    console.log('Successfully seeded listings.');
+
+    // Create secondary test user for Transactions
+    const testBuyer = await prisma.user.upsert({
+      where: { email: 'buyer@test.com' },
+      update: {},
+      create: {
+        email: 'buyer@test.com',
+        displayName: 'John Collector',
+        passwordHash,
+        userRole: 'BUYER',
+        countryCode: 'ID',
+        preferredCurrency: 'IDR',
+      },
+    });
+
+    // Generate Mock Messages
+    await prisma.message.create({
+      data: {
+        conversationId: `${admin.id}_${testBuyer.id}`,
+        senderId: testBuyer.id,
+        recipientId: admin.id,
+        content: 'Is this Charizard still available for immediate escrow?',
+        isRead: false,
+      }
+    });
+
+    // Generate Mock Transactions (Escrow testing)
+    await prisma.transaction.create({
+      data: {
+        buyerId: testBuyer.id,
+        sellerId: admin.id,
+        transactionType: 'sale',
+        agreedPriceIdr: 25000000,
+        platformFeeBuyerIdr: 750000,
+        platformFeeSellerIdr: 750000,
+        escrowStatus: 'completed',
+        completedAt: new Date(Date.now() - 86400000 * 2),
+      }
+    });
+
+    await prisma.transaction.create({
+      data: {
+        buyerId: testBuyer.id,
+        sellerId: admin.id,
+        transactionType: 'sale',
+        agreedPriceIdr: 125000000,
+        platformFeeBuyerIdr: 3750000,
+        platformFeeSellerIdr: 3750000,
+        escrowStatus: 'shipped',
+        trackingNumberSeller: 'RESI-CARD-123',
+      }
+    });
+
+    console.log('Successfully injected historical Transactions, Messages, and Sales for Admin Panel Validation!');
   } catch (error) {
     console.error('Error in seed script:', error);
     throw error;

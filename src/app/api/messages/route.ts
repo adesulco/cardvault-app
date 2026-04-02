@@ -12,14 +12,22 @@ const generateConversationId = (userA: string, userB: string) => {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
+  const counterpartId = searchParams.get('counterpartId');
   const conversationId = searchParams.get('conversationId');
 
-  if (!userId && !conversationId) return NextResponse.json({ error: 'User ID or Conversation ID required' }, { status: 400 });
+  if (!userId) return NextResponse.json({ error: 'User ID required' }, { status: 400 });
 
   try {
-    if (conversationId) {
+    if (counterpartId || conversationId) {
+       const finalTarget = counterpartId || 'fallback';
        const thread = await prisma.message.findMany({
-          where: { conversationId },
+          where: { 
+             OR: [
+               { senderId: userId, recipientId: finalTarget },
+               { senderId: finalTarget, recipientId: userId },
+               { conversationId: conversationId || undefined }
+             ]
+          },
           orderBy: { createdAt: 'asc' },
           include: {
              sender: { select: { id: true, displayName: true, avatarUrl: true } }
@@ -29,7 +37,11 @@ export async function GET(request: NextRequest) {
        // Mark as read natively for the querying user
        if (userId && thread.length > 0) {
           await prisma.message.updateMany({
-             where: { conversationId, recipientId: userId, isRead: false },
+             where: { 
+                 recipientId: userId, 
+                 senderId: finalTarget,
+                 isRead: false 
+             },
              data: { isRead: true, readAt: new Date() }
           });
        }

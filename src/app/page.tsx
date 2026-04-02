@@ -44,13 +44,14 @@ export default function HomePage() {
   if (user) {
     return (
       <div className="pt-2 pb-6 flex flex-col gap-2 bg-slate-50 overflow-x-hidden">
+        <h1 className="sr-only">CardVault Marketplace Home</h1>
         {/* 1. Marketing Banners */}
         <div className="w-full overflow-x-auto flex gap-4 px-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
            {homeData.banners && homeData.banners.length > 0 ? (
               homeData.banners.map((banner: any) => (
                  <a key={banner.id} href={banner.linkUrl} className="snap-start shrink-0 w-[95%] md:w-[85%] rounded-[16px] overflow-hidden shadow-sm relative block">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={banner.imageUrl} alt={banner.altText || ''} className="w-full h-full object-cover shrink-0 aspect-[21/9]" />
+                    <img src={banner.imageUrl} alt={banner.altText || ''} className="w-full h-full object-cover shrink-0 aspect-[21/9]" onError={(e) => { e.currentTarget.parentElement!.style.display = 'none'; }} />
                  </a>
               ))
            ) : (

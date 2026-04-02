@@ -5,6 +5,8 @@ import { Bell, ChevronDown } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import BrandLogo from '@/components/BrandLogo';
 
+let lastNotifFetch = 0;
+
 export default function Header() {
   const { preferredCurrency, setCurrency, user } = useAppStore();
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
@@ -13,6 +15,10 @@ export default function Header() {
   useEffect(() => {
     if (!user?.id) return;
     const fetchUnread = () => {
+      const now = Date.now();
+      if (now - lastNotifFetch < 4000) return; // Hard deduplication cutoff
+      lastNotifFetch = now;
+
       fetch(`/api/notifications?userId=${user.id}`)
         .then(res => res.json())
         .then(data => {
@@ -29,7 +35,7 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-100">
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2" aria-label="CardVault Marketplace Home">
           <BrandLogo size={32} />
           <span className="font-bold text-lg text-brand-gradient">CardVault</span>
         </Link>
@@ -40,6 +46,8 @@ export default function Header() {
             <div className="relative">
               <button
                 onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
+                aria-label={`Toggle currency, currently ${preferredCurrency}`}
+                aria-expanded={showCurrencyMenu}
                 className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 rounded-full text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors"
               >
                 {preferredCurrency === 'IDR' ? 'Rp' : '$'}
@@ -72,7 +80,7 @@ export default function Header() {
             </div>
 
             {/* Notifications */}
-            <Link href="/notifications" className="relative p-2 text-slate-600 hover:text-slate-900">
+            <Link href="/notifications" aria-label={`View notifications, ${unreadCount} unread`} className="relative p-2 text-slate-600 hover:text-slate-900">
               <Bell size={22} />
               {unreadCount > 0 && (
                 <span className="absolute top-0 right-0 min-w-[14px] h-[14px] flex items-center justify-center bg-red-500 border-2 border-white rounded-full text-[8px] font-bold text-white px-0.5">

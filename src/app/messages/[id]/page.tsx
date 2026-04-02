@@ -31,6 +31,7 @@ export default function ChatThreadPage() {
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [referencedItem, setReferencedItem] = useState<any>(null);
+  const [counterpart, setCounterpart] = useState<any>(null);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -43,11 +44,22 @@ export default function ChatThreadPage() {
   };
 
   useEffect(() => {
+    if (counterpartId) {
+      fetch(`/api/users/search?q=${counterpartId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.users?.[0]) setCounterpart(data.users[0]);
+        })
+        .catch(console.error);
+    }
+  }, [counterpartId]);
+
+  useEffect(() => {
     if (!user?.id || !conversationId) return;
 
     const fetchThread = async (initialRun = false) => {
       try {
-        const res = await fetch(`/api/messages?conversationId=${conversationId}&userId=${user.id}&_t=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch(`/api/messages?counterpartId=${counterpartId}&userId=${user.id}&_t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setMessages(data.messages || []);
@@ -61,7 +73,11 @@ export default function ChatThreadPage() {
     };
 
     fetchThread(true);
-    pollTimer.current = setInterval(() => fetchThread(false), 3000);
+    
+    // Visibility-aware optimized polling
+    pollTimer.current = setInterval(() => {
+       if (document.visibilityState === 'visible') fetchThread(false);
+    }, 8000);
 
     return () => {
        if (pollTimer.current) clearInterval(pollTimer.current);
@@ -140,8 +156,15 @@ export default function ChatThreadPage() {
         <button onClick={() => router.push('/messages')} className="mr-3 p-1.5 rounded-full hover:bg-gray-100 text-gray-700 transition-colors md:hidden">
           <ArrowLeft size={20} />
         </button>
+        <div className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden bg-gray-100 flex items-center justify-center mr-3 shrink-0 relative">
+          {counterpart?.avatarUrl ? (
+            <Image src={counterpart.avatarUrl} alt="" fill className="object-cover" />
+          ) : (
+            <span className="text-gray-400 font-bold text-sm uppercase">{counterpart?.displayName?.[0] || '?'}</span>
+          )}
+        </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-[17px] font-bold text-gray-900 tracking-tight leading-none mb-1">Negotations</h1>
+          <h1 className="text-[17px] font-bold text-gray-900 tracking-tight leading-none mb-1">{counterpart?.displayName || 'Negotiations'}</h1>
           <p className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 uppercase tracking-wider">
             <Shield size={10} className="fill-emerald-200" /> Vault Security Active
           </p>

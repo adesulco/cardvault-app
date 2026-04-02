@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           }
        },
        take: 10,
-       select: { id: true, displayName: true, username: true, avatarUrl: true, trustScore: true, followers: true }
+       select: { id: true, displayName: true, username: true, avatarUrl: true, trustScore: true, totalTransactions: true, followers: true }
     });
 
     // Map the results and intelligently figure out if the searching user is mutually subscribed
@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
        username: u.username,
        avatarUrl: u.avatarUrl,
        trustScore: u.trustScore,
+       totalTransactions: u.totalTransactions,
        isFollowed: authorizerId ? u.followers.some(f => f.followerId === authorizerId) : false
     }));
 

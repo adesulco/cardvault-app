@@ -30,7 +30,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ user }, { status: 200 });
+    return NextResponse.json(
+      { user }, 
+      { status: 200, headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30' } }
+    );
 
   } catch (error: any) {
     console.error('Auth check error:', error);

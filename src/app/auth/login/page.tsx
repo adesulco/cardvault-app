@@ -54,12 +54,20 @@ export default function LoginPage() {
       }
 
       // APPROVED or PENDING — let user in natively
-      router.push('/');
+      const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const callbackUrl = searchParams?.get('callbackUrl') || '/';
+      router.push(callbackUrl);
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const getCallbackUrl = () => {
+    return typeof window !== 'undefined' 
+      ? new URLSearchParams(window.location.search).get('callbackUrl') || '/' 
+      : '/';
   };
 
 
@@ -102,7 +110,7 @@ export default function LoginPage() {
       <p className="text-sm text-slate-500 mt-1">Sign in to your CardVault account</p>
 
       <button
-         onClick={() => signIn('google', { callbackUrl: '/' })}
+         onClick={() => signIn('google', { callbackUrl: getCallbackUrl() })}
          className="w-full mt-6 flex items-center justify-center gap-3 py-3.5 bg-white border border-slate-200 shadow-sm rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
       >
          <svg viewBox="0 0 24 24" className="w-5 h-5">

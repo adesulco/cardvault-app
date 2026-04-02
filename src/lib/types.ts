@@ -161,7 +161,7 @@ export const CARD_CATEGORIES = [
   { id: 'football', label: 'Football', icon: '🏈' },
   { id: 'soccer', label: 'Soccer', icon: '⚽' },
   { id: 'hockey', label: 'Hockey', icon: '🏒' },
-  { id: 'pokemon', label: 'Pokémon/TCG', icon: '⚡' },
+  { id: 'pokemon', label: 'Pokémon', icon: '⚡' },
   { id: 'yugioh', label: 'Yu-Gi-Oh!', icon: '🎴' },
   { id: 'mtg', label: 'Magic: The Gathering', icon: '🧙' },
   { id: 'other', label: 'Other Collectibles', icon: '🃏' },

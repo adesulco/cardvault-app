@@ -135,7 +135,14 @@ export default function MessagesPage() {
                       {truncateContent(message.content)}
                     </td>
                     <td className="py-3 px-4 text-xs font-mono text-slate-600">
-                      {message.transactionId ? message.transactionId.slice(0, 8) + '...' : 'N/A'}
+                      {(() => {
+                        if (message.transactionId) return message.transactionId.slice(0, 8) + '...';
+                        try {
+                          const parsed = JSON.parse(message.content);
+                          if (parsed.listingId) return `[Inq] ${parsed.listingId.slice(0, 6)}`;
+                        } catch (e) {}
+                        return 'N/A';
+                      })()}
                     </td>
                     <td className="py-3 px-4">
                       <span

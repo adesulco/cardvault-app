@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       pendingKyc,
       openDisputes,
       pendingTransactions,
-    });
+    }, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30' } });
   } catch (error: any) {
     console.error('Error fetching badges:', error);
     return NextResponse.json(

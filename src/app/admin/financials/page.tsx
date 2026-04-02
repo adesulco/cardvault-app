@@ -67,7 +67,7 @@ export default function FinancialsPage() {
         },
         {
           label: 'Pending Payouts',
-          value: formatCurrency(data.pendingPayouts),
+          value: data.pendingPayouts.toString(),
           icon: DollarSign,
           color: 'bg-amber-500',
         },
@@ -111,18 +111,37 @@ export default function FinancialsPage() {
         </div>
       )}
 
-      {/* Chart Placeholder */}
+      {/* Chart Visualization */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h2 className="text-sm font-semibold text-slate-900 mb-4">Transaction Volume Trend</h2>
-        <div className="h-64 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400">
-          <p className="text-sm">Chart visualization coming soon</p>
-        </div>
+        {!data || loading ? (
+          <div className="h-64 bg-slate-50 rounded-lg animate-pulse" />
+        ) : data.recentTransactions.length === 0 ? (
+          <div className="h-64 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400">
+            <p className="text-sm">No transaction data available yet</p>
+          </div>
+        ) : (
+          <div className="h-64 bg-slate-50 rounded-lg flex items-end justify-between px-6 pb-4 pt-10 gap-2 border border-slate-100 overflow-hidden relative" aria-label="Transaction Chart">
+             {data.recentTransactions.slice(0, 30).reverse().map((tx, idx) => {
+                const amount = tx.agreedPriceIdr || tx.agreedPriceUsd || 0;
+                const maxAmount = Math.max(...data.recentTransactions.map(t => (t.agreedPriceIdr || t.agreedPriceUsd || 100000)));
+                const heightPct = Math.max(5, (amount / maxAmount) * 100);
+                return (
+                   <div key={tx.id || idx} className="flex-1 w-full bg-blue-500/80 hover:bg-blue-600 transition-all rounded-t-sm group relative" style={{ height: `${heightPct}%` }}>
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none z-10 transition-opacity">
+                         Rp {(amount/1000).toFixed(0)}k
+                      </div>
+                   </div>
+                );
+             })}
+          </div>
+        )}
       </div>
 
       {/* Recent Payouts */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-slate-900">Recent Transactions (30d)</h2>
+          <h2 className="text-sm font-semibold text-slate-900">Recent Completed Transactions (30d)</h2>
           <button
             onClick={fetchData}
             disabled={loading}

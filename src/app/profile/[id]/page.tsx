@@ -27,6 +27,7 @@ export default function PublicProfilePage() {
   
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<FollowStats | null>(null);
+  const [collectionValue, setCollectionValue] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -55,6 +56,15 @@ export default function PublicProfilePage() {
              setProfile(data.users[0]);
           }
        });
+
+    fetch(`/api/listings?sellerId=${params.id}`)
+      .then(res => res.json())
+      .then(data => {
+         if (data.listings) {
+            const val = data.listings.reduce((sum: number, l: any) => sum + (l.priceIdr || 0), 0);
+            setCollectionValue(val);
+         }
+      });
 
     fetch(`/api/users/${params.id}/follow${user ? `?followerId=${user.id}` : ''}`)
       .then(res => res.json())
@@ -119,6 +129,11 @@ export default function PublicProfilePage() {
           
           <div className="flex items-center gap-6 mt-6">
              <div className="text-center">
+                <p className="text-xl font-bold text-gray-900">{profile?.totalTransactions || 0}</p>
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Trades</p>
+             </div>
+             <div className="h-8 w-px bg-gray-200"></div>
+             <div className="text-center">
                 <p className="text-xl font-bold text-gray-900">{stats?.followersCount || 0}</p>
                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Followers</p>
              </div>
@@ -158,8 +173,9 @@ export default function PublicProfilePage() {
        
        <div className="p-4">
           <h2 className="text-[13px] font-bold text-gray-900 uppercase tracking-widest mb-3 px-2">Active Listings</h2>
-          <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-sm text-gray-500 shadow-sm">
-             Listing queries routing will populate here in the next sprint.
+          <div className="bg-white rounded-xl border border-gray-100 p-8 flex flex-col items-center text-center shadow-sm">
+             <p className="text-[14px] font-bold text-gray-900 mb-1">Collection Value: <span className="text-emerald-600">Rp {collectionValue.toLocaleString('id-ID')}</span></p>
+             <p className="text-sm text-gray-500">Based on active listing asking prices explicitly.</p>
           </div>
        </div>
     </div>

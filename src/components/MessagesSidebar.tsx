@@ -48,7 +48,11 @@ export default function MessagesSidebar() {
     };
 
     fetchInbox();
-    pollTimer.current = setInterval(fetchInbox, 4000);
+    
+    // Visibility-aware optimized polling
+    pollTimer.current = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchInbox();
+    }, 15000);
 
     return () => {
       if (pollTimer.current) clearInterval(pollTimer.current);

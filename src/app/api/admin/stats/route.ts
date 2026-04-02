@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       feesCollected30d: 0,
       recentTransactions,
       recentUsers,
-    });
+    }, { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30' } });
   } catch (error: any) {
     console.error('Error fetching stats:', error);
     return NextResponse.json(

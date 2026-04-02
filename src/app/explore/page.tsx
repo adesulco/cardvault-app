@@ -200,11 +200,10 @@ export default function MarketplacePage() {
 
           {/* Grid or Empty State */}
           {loading && page === 1 ? (
-            <div className="px-4 py-12 text-center" aria-live="polite">
-              <p className="text-sm text-gray-500 flex items-center justify-center gap-2">
-                 <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></span>
-                 Loading Database...
-              </p>
+            <div className="px-4 grid grid-cols-2 md:grid-cols-3 gap-4" aria-live="polite">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                 <div key={i} className="animate-pulse bg-slate-200 rounded-[18px] w-full aspect-[3/4]"></div>
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="px-4 py-12 text-center">

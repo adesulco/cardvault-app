@@ -99,7 +99,8 @@ export function middleware(request: NextRequest) {
 
     if (!isAuth && !isPublic && !isStatic) {
        const url = request.nextUrl.clone();
-       url.pathname = '/';
+       url.pathname = '/auth/login';
+       url.searchParams.set('callbackUrl', request.nextUrl.pathname);
        return NextResponse.redirect(url);
     }
     return NextResponse.next();
