@@ -46,6 +46,20 @@ export default function AddCardPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+     let e: Record<string, string> = {};
+     if (!formData.cardName) e.cardName = "Card Name natively required.";
+     if (!frontImageFile) e.frontImage = "Front Photo specifically required.";
+     if (!formData.sportOrCategory) e.sportOrCategory = "Category explicit mapping required.";
+     if (!formData.year) e.year = "Year natively required.";
+     if (formData.listForSale && formData.listingMode === 'fixed' && !formData.priceIdr) e.priceIdr = "Listing Price required.";
+     if (formData.listForSale && formData.listingMode === 'auction' && !formData.startingBidIdr) e.startingBidIdr = "Starting Bid required.";
+     setErrors(e);
+     return Object.keys(e).length === 0;
+  }
+
   const getVerifyLink = (company: string, cert: string) => {
     if (!cert) return '#';
     switch (company) {
@@ -60,15 +74,9 @@ export default function AddCardPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     if (!user) return alert('You must be logged in to construct a CardVault item.');
     if (formData.listForSale && user.kycStatus === 'PENDING') return alert('You must be KYC Verified by an admin before you can post public listings.');
-
-    if (formData.listForSale) {
-       if (!frontImageFile) return alert("A Front Photo is strictly required in order to list a card on the global marketplace.");
-       if (!formData.sportOrCategory) return alert("Please select a valid Category for your listing to ensure accurate indexing.");
-       if (formData.listingMode === 'fixed' && !formData.priceIdr) return alert("A Fixed 'Buy It Now' price is required to publish this listing.");
-       if (formData.listingMode === 'auction' && !formData.startingBidIdr) return alert("A valid 'Starting Bid' limit is required to launch an auction.");
-    }
 
     setIsLookingUp(true);
     try {
@@ -137,7 +145,7 @@ export default function AddCardPage() {
       <form onSubmit={handleSubmit} className="px-4 space-y-5">
         {/* Photo Upload */}
         <div>
-          <label className="text-sm font-medium text-gray-700">Card Photos</label>
+          <label className="text-sm font-medium text-gray-700">Card Photos *</label>
           <div className="grid grid-cols-2 gap-3 mt-2">
             <label className="aspect-[3/4] border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-blue-400 hover:bg-blue-50/50 transition-colors cursor-pointer relative overflow-hidden">
               {frontImageFile ? (
@@ -163,6 +171,7 @@ export default function AddCardPage() {
               <input type="file" accept="image/*" className="hidden" onChange={e => setBackImageFile(e.target.files?.[0] || null)} />
             </label>
           </div>
+          {errors.frontImage && <p className="text-xs text-red-500 mt-2 font-bold">{errors.frontImage}</p>}
         </div>
 
         {/* Condition - Moved to top UX priority */}
@@ -252,10 +261,11 @@ export default function AddCardPage() {
             type="text"
             required
             value={formData.cardName}
-            onChange={e => updateField('cardName', e.target.value)}
+            onChange={e => { updateField('cardName', e.target.value); setErrors(prev => ({...prev, cardName: ''})) }}
             placeholder="e.g., Charizard VMAX"
-            className="w-full mt-1.5 px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm"
+            className={`w-full mt-1.5 px-4 py-3 bg-white border ${errors.cardName ? 'border-red-500' : 'border-gray-200'} rounded-xl text-sm`}
           />
+          {errors.cardName && <p className="text-xs text-red-500 mt-1.5 font-bold">{errors.cardName}</p>}
         </div>
 
         {/* Player / Character */}
@@ -272,29 +282,30 @@ export default function AddCardPage() {
 
         {/* Category */}
         <div>
-          <label className="text-sm font-medium text-gray-700">Category</label>
+          <label className="text-sm font-medium text-gray-700">Category *</label>
           <select
             value={formData.sportOrCategory}
-            onChange={e => updateField('sportOrCategory', e.target.value)}
-            className="w-full mt-1.5 px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm appearance-none"
+            onChange={e => { updateField('sportOrCategory', e.target.value); setErrors(prev => ({...prev, sportOrCategory: ''})) }}
+            className={`w-full mt-1.5 px-4 py-3 bg-white border ${errors.sportOrCategory ? 'border-red-500' : 'border-gray-200'} rounded-xl text-sm appearance-none`}
           >
             <option value="">Select category</option>
             {CARD_CATEGORIES.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.icon} {cat.label}</option>
             ))}
           </select>
+          {errors.sportOrCategory && <p className="text-xs text-red-500 mt-1.5 font-bold">{errors.sportOrCategory}</p>}
         </div>
 
         {/* Year, Set, Brand row */}
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="text-sm font-medium text-gray-700">Year</label>
+            <label className="text-sm font-medium text-gray-700">Year *</label>
             <input
               type="text"
               value={formData.year}
-              onChange={e => updateField('year', e.target.value)}
+              onChange={e => { updateField('year', e.target.value); setErrors(prev => ({...prev, year: ''})) }}
               placeholder="2024"
-              className="w-full mt-1.5 px-3 py-3 bg-white border border-gray-200 rounded-xl text-sm"
+              className={`w-full mt-1.5 px-3 py-3 bg-white border ${errors.year ? 'border-red-500' : 'border-gray-200'} rounded-xl text-sm`}
             />
           </div>
           <div>
@@ -367,8 +378,9 @@ export default function AddCardPage() {
                      <label className="text-sm font-medium text-gray-700">Buy It Now Price (IDR)</label>
                      <div className="relative mt-1.5">
                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">Rp</span>
-                       <input type="number" value={formData.priceIdr} onChange={e => updateField('priceIdr', e.target.value)} placeholder="0" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-blue-400" />
+                       <input type="number" value={formData.priceIdr} onChange={e => { updateField('priceIdr', e.target.value); setErrors(prev => ({...prev, priceIdr: ''})) }} placeholder="0" className={`w-full pl-10 pr-4 py-3 bg-gray-50 border ${errors.priceIdr ? 'border-red-500' : 'border-gray-200'} rounded-xl text-sm outline-none focus:border-blue-400`} />
                      </div>
+                     {errors.priceIdr && <p className="text-xs text-red-500 mt-1.5 font-bold">{errors.priceIdr}</p>}
                    </div>
                  </>
               ) : (

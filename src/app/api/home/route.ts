@@ -5,15 +5,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    // 1. Fetch Banners
-    const banners = await prisma.banner.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: 'asc' }
-    });
-
-    // 2. Fetch Configs
-    const sellerConfig = await prisma.platformConfig.findUnique({ where: { configKey: 'featured_sellers' } });
-    const listingConfig = await prisma.platformConfig.findUnique({ where: { configKey: 'featured_listings' } });
+    // 1 & 2. Fetch Banners and Configs using concurrency
+    const [banners, sellerConfig, listingConfig] = await Promise.all([
+      prisma.banner.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+      prisma.platformConfig.findUnique({ where: { configKey: 'featured_sellers' } }),
+      prisma.platformConfig.findUnique({ where: { configKey: 'featured_listings' } })
+    ]);
 
     let featuredSellers: any[] = [];
     if (sellerConfig?.configValue) {

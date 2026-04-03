@@ -135,7 +135,7 @@ export default function FinancialsPage() {
                 return (
                    <div key={tx.id || idx} className="flex-1 w-full bg-blue-500/80 hover:bg-blue-600 transition-all rounded-t-sm group relative" style={{ height: `${heightPct}%` }}>
                       <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none z-10 transition-opacity">
-                         Rp {(amount/1000).toFixed(0)}k
+                         {formatCurrency(amount)}
                       </div>
                    </div>
                 );

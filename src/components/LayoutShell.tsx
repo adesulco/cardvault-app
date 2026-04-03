@@ -67,7 +67,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <main className="pt-14 pb-20 relative">
         <div className="w-full h-full">{children}</div>
         <div className="text-center pb-8 pt-4 text-[10px] text-slate-400 font-mono tracking-widest uppercase shrink-0" aria-hidden="true">
-           CardVault Build v0.74
+           CardVault Build v0.8
         </div>
       </main>
       {user && <BottomNav />}

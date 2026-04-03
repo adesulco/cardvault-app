@@ -212,7 +212,7 @@ export default function MarketplacePage() {
 
           {/* Results count */}
           <div className="px-4">
-            <p className="text-xs text-gray-500">{filtered.length} cards found</p>
+            <p className="text-xs text-gray-500">{filtered.length} {filtered.length === 1 ? 'card' : 'cards'} found</p>
           </div>
 
           {/* Grid or Empty State */}

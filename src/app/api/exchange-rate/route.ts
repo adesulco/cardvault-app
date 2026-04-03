@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Using a public open exchange rate API
-    const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    // Using a public open exchange rate API with 15-min cache constraint to fix V10-009
+    const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
+       next: { revalidate: 900 }
+    });
     const data = await res.json();
     const rate = data.rates.IDR;
     

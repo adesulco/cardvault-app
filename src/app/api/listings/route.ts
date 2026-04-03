@@ -11,13 +11,8 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = 20;
 
-    const now = new Date();
     const whereClause: any = { 
-       status: 'active',
-       OR: [
-          { expiresAt: { gte: now } },
-          { expiresAt: null }
-       ]
+       status: 'active'
     };
 
     if (q) {

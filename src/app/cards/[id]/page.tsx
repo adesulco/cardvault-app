@@ -40,7 +40,7 @@ export default function CardDetailPage() {
       <div className="px-4 space-y-4">
         <div>
           <h2 className="text-xl font-bold">{CARD.cardName}</h2>
-          <p className="text-sm text-gray-500">{CARD.playerOrCharacter} · {CARD.year} · {CARD.setName}</p>
+          <p className="text-sm text-gray-500">{[CARD.playerOrCharacter, CARD.year, CARD.setName].filter(Boolean).join(' · ')}</p>
           <div className="mt-2 inline-flex px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium capitalize">
             {CARD.status.replace('_', ' ')}
           </div>
