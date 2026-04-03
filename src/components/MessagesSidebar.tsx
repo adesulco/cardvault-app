@@ -95,7 +95,7 @@ export default function MessagesSidebar() {
       <div className="bg-white px-4 py-3 shrink-0 border-b border-gray-100 z-10">
         <div className="flex items-center justify-between">
            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Messages</h1>
-           <button onClick={() => setIsComposerOpen(true)} className="p-2 -mr-2 text-gray-900 hover:bg-gray-100 rounded-full transition-colors">
+           <button onClick={(e) => { e.preventDefault(); setIsComposerOpen(true); }} className="p-2 -mr-2 text-gray-900 hover:bg-gray-100 rounded-full transition-colors relative z-20 cursor-pointer">
               <Edit size={22} className="stroke-[2px]" />
            </button>
         </div>
@@ -187,8 +187,8 @@ export default function MessagesSidebar() {
       </div>
 
       {/* Global Composer Slide-In */}
-      <div className={`absolute inset-0 z-50 bg-white transition-transform duration-300 ease-in-out shadow-2xl ${
-         isComposerOpen ? 'translate-y-0' : 'translate-y-full opacity-0 pointer-events-none'
+      <div className={`absolute inset-0 z-[100] bg-white transition-transform duration-300 ease-in-out shadow-2xl ${
+         isComposerOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
       }`}>
          <div className="bg-white border-b border-gray-100 pt-safe px-4 py-3 flex items-center gap-3">
             <button onClick={() => setIsComposerOpen(false)} className="p-1 text-gray-900 hover:bg-gray-100 rounded-full transition-colors">

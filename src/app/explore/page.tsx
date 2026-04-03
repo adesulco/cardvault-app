@@ -148,24 +148,26 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      {/* Filters Panel (Listings Mode Only) */}
+      {/* Filters Panel Modal (Listings Mode Only) */}
       {showFilters && activeTab === 'listings' && (
-        <>
-          <div className="fixed inset-0 z-30" onClick={() => setShowFilters(false)} />
-          <div className="px-4 space-y-3 relative z-40">
-            <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3 shadow-lg relative">
-              <button 
-                onClick={() => setShowFilters(false)} 
-                className="absolute right-3 top-3 p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Close Filters"
-              >
-                <X size={16} />
-              </button>
-              <div>
-                <label className="text-xs font-medium text-gray-500 uppercase">Sort by</label>
-                <div className="flex flex-wrap gap-2 mt-1.5 pr-8">
+        <div className="fixed inset-0 z-[100] flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowFilters(false)} />
+          <div className="bg-white w-full rounded-t-3xl p-5 relative z-10 space-y-5 shadow-2xl h-auto">
+             <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                <h3 className="text-lg font-bold text-gray-900">Application Filters</h3>
+                <button 
+                  onClick={() => setShowFilters(false)} 
+                  className="p-2 text-gray-400 bg-gray-50 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X size={18} />
+                </button>
+             </div>
+             
+             <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Sort by Result Metric</label>
+                <div className="grid grid-cols-2 gap-2">
                   {([
-                    ['newest', 'Newest'],
+                    ['newest', 'Newest Drops'],
                     ['price_asc', 'Price: Low → High'],
                     ['price_desc', 'Price: High → Low'],
                     ['popular', 'Most Popular'],
@@ -173,28 +175,33 @@ export default function MarketplacePage() {
                     <button
                       key={key}
                       onClick={() => setSortBy(key)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        sortBy === key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                        sortBy === key ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                       }`}
                     >
                       {label}
                     </button>
                   ))}
                 </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 uppercase">Condition</label>
-                <div className="flex gap-2 mt-1.5">
-                  {['All', 'Graded', 'Raw'].map(c => (
-                    <button key={c} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">
+             </div>
+             <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Condition Grading</label>
+                <div className="flex gap-2">
+                  {['All', 'Graded Authenticated', 'Raw Verified'].map(c => (
+                    <button key={c} className="px-4 py-2 rounded-xl text-xs font-bold bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100">
                       {c}
                     </button>
                   ))}
                 </div>
-              </div>
-            </div>
+             </div>
+             
+             <div className="pt-2">
+                 <button onClick={() => setShowFilters(false)} className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl text-sm hover:bg-slate-800 transition-colors">
+                    Apply Requirements
+                 </button>
+             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Results Selection Engine */}

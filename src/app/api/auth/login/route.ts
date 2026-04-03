@@ -56,8 +56,6 @@ export async function POST(request: NextRequest) {
           email: user.email,
           displayName: user.displayName,
           kycStatus: user.kycStatus,
-          userRole: user.userRole,
-          isAdmin: user.isAdmin,
         },
       },
       { status: 200 }

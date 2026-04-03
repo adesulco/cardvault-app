@@ -21,7 +21,7 @@ export default function Header() {
       if (now - lastNotifFetch < 4000) return; // Hard deduplication cutoff
 
       if (!activeNotifPromise) {
-         activeNotifPromise = fetch(`/api/notifications?userId=${user.id}`).then(res => res.json());
+         activeNotifPromise = fetch(`/api/notifications`).then(res => res.json());
       }
       
       activeNotifPromise.then(data => {
@@ -29,11 +29,15 @@ export default function Header() {
           lastNotifFetch = Date.now();
         })
         .catch(() => {})
-        .finally(() => { activeNotifPromise = null; });
+        .finally(() => { 
+            setTimeout(() => { activeNotifPromise = null; }, 1000); 
+        });
     };
     
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 10000); // 10s poll
+    // Enforce deduplication and exactly 1 initial load
+    if (Date.now() - lastNotifFetch > 5000) fetchUnread();
+    
+    const interval = setInterval(fetchUnread, 30000); // Back off to 30s
     return () => { isMounted = false; clearInterval(interval); };
   }, [user?.id]);
 
