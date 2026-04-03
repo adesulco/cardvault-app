@@ -14,9 +14,9 @@ export default function HomePage() {
   const user = useAppStore((state) => state.user);
   const [homeData, setHomeData] = useState<any>({
     featuredSellers: [
-      { id: 'mock-1', displayName: 'CardVault Official', avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&q=80', totalTransactions: 154 },
-      { id: 'mock-2', displayName: 'Kanto Curator', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&q=80', totalTransactions: 89 },
-      { id: 'mock-3', displayName: 'TokyoCards', avatarUrl: 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?w=200&h=200&fit=crop&q=80', totalTransactions: 42 }
+      { id: 'mock-1', displayName: 'CardVault Official', avatarUrl: '/mock/blue_eyes_slab_1775067182285.png', totalTransactions: 154 },
+      { id: 'mock-2', displayName: 'Kanto Curator', avatarUrl: '/mock/charizard_slab_1775067166104.png', totalTransactions: 89 },
+      { id: 'mock-3', displayName: 'TokyoCards', avatarUrl: '/mock/ohtani_slab_1775067262564.png', totalTransactions: 42 }
     ],
     featuredListings: [
       { id: 'mock-lst-1', card: { cardName: 'Charizard Base Set Holo', frontImageUrl: '/mock/charizard_slab_1775067166104.png' }, priceIdr: 15500000, seller: { displayName: 'CardVault Official' } },

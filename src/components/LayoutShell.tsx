@@ -64,10 +64,10 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   return (
     <div className="max-w-md mx-auto min-h-screen bg-slate-50 relative shadow-2xl overflow-x-hidden border-l border-r border-gray-200">
       <Header />
-      <main className="pt-14 pb-20 min-h-screen flex flex-col justify-between">
-        <div className="flex-1">{children}</div>
-        <div className="text-center pt-8 pb-4 text-[10px] text-slate-400 font-mono tracking-widest uppercase" aria-hidden="true">
-           CardVault Build v0.72
+      <main className="pt-14 pb-20 flex flex-col justify-between">
+        <div className="flex-1 min-h-screen">{children}</div>
+        <div className="text-center pb-8 pt-4 text-[10px] text-slate-400 font-mono tracking-widest uppercase shrink-0" aria-hidden="true">
+           CardVault Build v0.73
         </div>
       </main>
       {user && <BottomNav />}

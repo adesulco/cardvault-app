@@ -63,6 +63,13 @@ export default function AddCardPage() {
     if (!user) return alert('You must be logged in to construct a CardVault item.');
     if (formData.listForSale && user.kycStatus === 'PENDING') return alert('You must be KYC Verified by an admin before you can post public listings.');
 
+    if (formData.listForSale) {
+       if (!frontImageFile) return alert("A Front Photo is strictly required in order to list a card on the global marketplace.");
+       if (!formData.sportOrCategory) return alert("Please select a valid Category for your listing to ensure accurate indexing.");
+       if (formData.listingMode === 'fixed' && !formData.priceIdr) return alert("A Fixed 'Buy It Now' price is required to publish this listing.");
+       if (formData.listingMode === 'auction' && !formData.startingBidIdr) return alert("A valid 'Starting Bid' limit is required to launch an auction.");
+    }
+
     setIsLookingUp(true);
     try {
       let finalFrontUrl = null;

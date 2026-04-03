@@ -124,7 +124,7 @@ export default function MarketplacePage() {
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search cards, players, sets..."
+              placeholder={activeTab === 'listings' ? "Search cards, players, sets..." : "Search users, vaults..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:border-blue-500 transition-colors"
@@ -150,41 +150,51 @@ export default function MarketplacePage() {
 
       {/* Filters Panel (Listings Mode Only) */}
       {showFilters && activeTab === 'listings' && (
-        <div className="px-4 space-y-3">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase">Sort by</label>
-              <div className="flex flex-wrap gap-2 mt-1.5">
-                {([
-                  ['newest', 'Newest'],
-                  ['price_asc', 'Price: Low → High'],
-                  ['price_desc', 'Price: High → Low'],
-                  ['popular', 'Most Popular'],
-                ] as const).map(([key, label]) => (
-                  <button
-                    key={key}
-                    onClick={() => setSortBy(key)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      sortBy === key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setShowFilters(false)} />
+          <div className="px-4 space-y-3 relative z-40">
+            <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3 shadow-lg relative">
+              <button 
+                onClick={() => setShowFilters(false)} 
+                className="absolute right-3 top-3 p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Close Filters"
+              >
+                <X size={16} />
+              </button>
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase">Sort by</label>
+                <div className="flex flex-wrap gap-2 mt-1.5 pr-8">
+                  {([
+                    ['newest', 'Newest'],
+                    ['price_asc', 'Price: Low → High'],
+                    ['price_desc', 'Price: High → Low'],
+                    ['popular', 'Most Popular'],
+                  ] as const).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => setSortBy(key)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        sortBy === key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase">Condition</label>
-              <div className="flex gap-2 mt-1.5">
-                {['All', 'Graded', 'Raw'].map(c => (
-                  <button key={c} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">
-                    {c}
-                  </button>
-                ))}
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase">Condition</label>
+                <div className="flex gap-2 mt-1.5">
+                  {['All', 'Graded', 'Raw'].map(c => (
+                    <button key={c} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200">
+                      {c}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Results Selection Engine */}
