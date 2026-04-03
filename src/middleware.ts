@@ -25,7 +25,12 @@ function applySecurityHeaders(request: NextRequest, response: NextResponse, nonc
     response.headers.set('Vary', 'Origin');
   } else {
     // Prevent wildcard fallbacks natively
-    response.headers.set('Access-Control-Allow-Origin', 'https://beta.cardvault.id');
+    // Prevent wildcard fallbacks natively, default to the requested host
+    const host = request.headers.get('host');
+    response.headers.set(
+      'Access-Control-Allow-Origin',
+      host === 'admin.cardvault.id' ? 'https://admin.cardvault.id' : 'https://beta.cardvault.id'
+    );
   }
 
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
@@ -85,6 +90,14 @@ export function middleware(request: NextRequest) {
         url.pathname = `/admin${pathname}`;
       }
       response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+    } else if (pathname === '/admin/dashboard') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin';
+      return buildResponse(NextResponse.redirect(url));
+    } else if (pathname === '/admin/promo-banners') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin/banners';
+      return buildResponse(NextResponse.redirect(url));
     }
     return buildResponse(response);
   }

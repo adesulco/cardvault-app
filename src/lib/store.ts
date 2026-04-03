@@ -43,6 +43,16 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'cardvault-auth-storage',
+      // Fix V13-002: Ensure we literally wipe role data securely from localStorage on mount/hydration
+      partialize: (state) => {
+        const persistUser = state.user ? { ...state.user } : null;
+        if (persistUser) {
+          delete (persistUser as any).role;
+          delete (persistUser as any).isAdmin;
+          delete (persistUser as any).userRole;
+        }
+        return { ...state, user: persistUser };
+      }
     }
   )
 );
