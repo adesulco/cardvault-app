@@ -1,0 +1,2 @@
+time_starttransfer:  %{time_starttransfer}s
+time_total:  %{time_total}s

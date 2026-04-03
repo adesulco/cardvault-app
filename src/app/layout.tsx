@@ -5,6 +5,8 @@ import LayoutShell from '@/components/LayoutShell';
 import Providers from '@/components/Providers';
 import { GoogleAnalytics } from '@next/third-parties/google';
 import prisma from '@/lib/prisma';
+import { headers } from 'next/headers';
+import { unstable_cache } from 'next/cache';
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
@@ -26,9 +28,15 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let gaId = null;
   try {
-     const config = await prisma.platformConfig.findUnique({ where: { configKey: 'google_analytics_id' } });
-     if (config && config.configValue) gaId = config.configValue;
+     const getGaId = unstable_cache(async () => {
+        const config = await prisma.platformConfig.findUnique({ where: { configKey: 'google_analytics_id' } });
+        return config?.configValue || null;
+     }, ['global-ga-id'], { revalidate: 3600 });
+     gaId = await getGaId();
   } catch(e) {}
+
+  const headersList = await headers();
+  const nonce = headersList.get('x-nonce') || undefined;
 
   return (
     <html lang="en">

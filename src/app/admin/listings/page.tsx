@@ -53,7 +53,7 @@ export default function ListingsPage() {
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' });
+    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   const getStatusColor = (status: string) => {

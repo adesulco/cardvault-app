@@ -55,6 +55,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
        // In production, this trigger mathematically executes Midtrans/Xendit payout APIs.
        // Here we finalize the logical state to 'completed'.
+       // Here we finalize the logical state to 'completed'.
        const updated = await prisma.transaction.update({
           where: { id: transactionId },
           data: { 
@@ -62,6 +63,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
              completedAt: new Date(),
           }
        });
+
+       if (transaction.listing?.id) {
+           await prisma.$transaction([
+               prisma.listing.update({ where: { id: transaction.listing.id }, data: { status: 'sold' }}),
+               prisma.card.update({ where: { id: transaction.listing.cardId }, data: { status: 'sold' }})
+           ]);
+       }
 
        // ── Phase 13: Instant Vault Platform Routing ──
        // Dynamically intercept the Admin Configuration mapping to support active 0% Promo periods.

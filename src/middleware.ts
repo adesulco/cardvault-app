@@ -17,68 +17,84 @@ function checkRateLimit(ip: string, limit: number, windowMs: number): boolean {
   return true;
 }
 
+function applySecurityHeaders(request: NextRequest, response: NextResponse, nonce: string) {
+  const origin = request.headers.get('origin');
+  response.headers.delete('Access-Control-Allow-Origin');
+  if (origin && ['https://beta.cardvault.id', 'https://admin.cardvault.id'].includes(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Vary', 'Origin');
+  } else {
+    // Prevent wildcard fallbacks natively
+    response.headers.set('Access-Control-Allow-Origin', 'https://beta.cardvault.id');
+  }
+
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  
+  const isProd = process.env.NODE_ENV === 'production';
+  const cspHeader = `default-src 'self'; script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${isProd ? '' : "'unsafe-eval'"}; style-src 'self' 'nonce-${nonce}' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`;
+  response.headers.set('Content-Security-Policy', cspHeader.replace(/\s{2,}/g, ' ').trim());
+
+  return response;
+}
+
 export function middleware(request: NextRequest) {
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+
+  // Helper to ensure all responses get headers
+  const buildResponse = (res: NextResponse) => applySecurityHeaders(request, res, nonce);
+
   const hostname = request.headers.get('host') || '';
   const { pathname } = request.nextUrl;
 
-  // ── 1. Edge Security Layer (Anti-Bot & Limiter) ──
+  // 1. Edge Security Layer
   if (pathname.includes('/bids')) {
     const userAgent = request.headers.get('user-agent') || '';
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '127.0.0.1';
 
-    // A. Explicit Headless/Script Blocking
     const blockedSignatures = ['headless', 'puppeteer', 'playwright', 'postmanruntime', 'curl', 'wget', 'python-requests'];
     if (blockedSignatures.some(sig => userAgent.toLowerCase().includes(sig))) {
-      return NextResponse.json({ error: 'Automated script traffic rejected by Edge Firewall.' }, { status: 403 });
+      return buildResponse(NextResponse.json({ error: 'Automated script traffic rejected' }, { status: 403 }));
     }
 
-    // B. Basic Localized IP Throttling (Vercel Lambda Isolated)
-    if (!checkRateLimit(ip, 10, 10000)) { // Max 10 hits per 10 seconds
-      return NextResponse.json({ error: '429 Too Many Requests (IP Blocked)' }, { status: 429 });
+    if (!checkRateLimit(ip, 10, 10000)) {
+      return buildResponse(NextResponse.json({ error: '429 Too Many Requests' }, { status: 429 }));
     }
   }
 
-  // ── Admin subdomain routing ──
-  // admin.cardvault.id → rewrite to /admin routes
+  // 2. Admin routing
   const isAdminDomain = hostname === 'admin.cardvault.id';
 
   if (isAdminDomain) {
-    // Allow API routes, static assets through
+    let response = NextResponse.next({ request: { headers: requestHeaders } });
+
     if (
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/_next') ||
-      pathname.startsWith('/favicon') ||
-      pathname.startsWith('/manifest')
+      !pathname.startsWith('/api/') &&
+      !pathname.startsWith('/_next') &&
+      !pathname.startsWith('/favicon') &&
+      !pathname.startsWith('/manifest') &&
+      !pathname.startsWith('/admin')
     ) {
-      return NextResponse.next();
+      const url = request.nextUrl.clone();
+      if (pathname === '/') {
+        url.pathname = '/admin';
+      } else if (pathname === '/login') {
+        url.pathname = '/admin/login';
+      } else {
+        url.pathname = `/admin${pathname}`;
+      }
+      response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
     }
-
-    // If already on /admin path, let it through
-    if (pathname.startsWith('/admin')) {
-      return NextResponse.next();
-    }
-
-    // Rewrite root and other paths to /admin equivalent
-    const url = request.nextUrl.clone();
-    if (pathname === '/') {
-      url.pathname = '/admin';
-    } else if (pathname === '/login') {
-      url.pathname = '/admin/login';
-    } else {
-      url.pathname = `/admin${pathname}`;
-    }
-    return NextResponse.rewrite(url);
+    return buildResponse(response);
   }
 
-  // ── Password gate for www.cardvault.id ──
-  const isMainDomain =
-    hostname === 'www.cardvault.id' || hostname === 'cardvault.id';
-
+  // 3. Password gate
+  const isMainDomain = hostname === 'www.cardvault.id' || hostname === 'cardvault.id';
   if (!isMainDomain) {
-    return NextResponse.next();
+    return buildResponse(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
-  // Allow the gate page itself, its API, static assets
   if (
     pathname === '/gate' ||
     pathname.startsWith('/api/gate') ||
@@ -86,14 +102,12 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/favicon') ||
     pathname.startsWith('/manifest')
   ) {
-    return NextResponse.next();
+    return buildResponse(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
-  // Check if visitor has the access cookie
   const accessCookie = request.cookies.get(GATE_COOKIE_NAME);
   if (accessCookie?.value === 'granted') {
-    // ── Global Platform Auth Wall Enforced Here ──
-    const isAuth = request.cookies.has('next-auth.session-token') || request.cookies.has('__Secure-next-auth.session-token');
+    const isAuth = request.cookies.has('next-auth.session-token') || request.cookies.has('__Secure-next-auth.session-token') || request.cookies.has('cv_session_token');
     const isPublic = pathname === '/' || pathname.startsWith('/auth') || pathname === '/gate';
     const isStatic = pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.startsWith('/favicon') || pathname.startsWith('/manifest') || pathname.startsWith('/seed');
 
@@ -101,16 +115,15 @@ export function middleware(request: NextRequest) {
        const url = request.nextUrl.clone();
        url.pathname = '/auth/login';
        url.searchParams.set('callbackUrl', request.nextUrl.pathname);
-       return NextResponse.redirect(url);
+       return buildResponse(NextResponse.redirect(url));
     }
-    return NextResponse.next();
+    return buildResponse(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
-  // Redirect to gate page
   const gateUrl = request.nextUrl.clone();
   gateUrl.pathname = '/gate';
   gateUrl.searchParams.set('next', pathname);
-  return NextResponse.redirect(gateUrl);
+  return buildResponse(NextResponse.redirect(gateUrl));
 }
 
 export const config = {

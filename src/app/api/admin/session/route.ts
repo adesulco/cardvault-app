@@ -1,3 +1,4 @@
+import { requireAdminAuth } from '@/lib/admin-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { compare } from 'bcryptjs';
 import prisma from '@/lib/prisma';
@@ -9,6 +10,7 @@ const SECRET = new TextEncoder().encode(
 
 // POST = login, GET = check session, DELETE = logout
 export async function POST(request: NextRequest) {
+
   try {
     const { email, password } = await request.json();
 
@@ -75,6 +77,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+
   try {
     const token = request.cookies.get('admin_token')?.value;
     if (!token) {

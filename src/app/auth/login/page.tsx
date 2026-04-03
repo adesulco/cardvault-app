@@ -41,7 +41,11 @@ export default function LoginPage() {
 
       // Store user session within the persisted global store
       setUser(data.user);
-      localStorage.setItem('cardvault_user', JSON.stringify(data.user)); // fallback if needed by legacy scripts
+      const safeStore = { ...data.user };
+      delete safeStore.role;
+      delete safeStore.isAdmin;
+      localStorage.setItem('cardvault_user', JSON.stringify(safeStore)); // stripped fallback
+
 
       // Check KYC status
       const userKycStatus = data.user.kycStatus;

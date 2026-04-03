@@ -91,7 +91,7 @@ export default function ProfilePage() {
                   <span className="text-sm font-semibold">{profile.trustScore || '0'}</span>
                 </div>
                 <span className="text-xs text-gray-400">|</span>
-                <span className="text-xs text-gray-500">{stats.totalTransactions} trades</span>
+                <span className="text-xs text-gray-500">{stats.totalTransactions} {stats.totalTransactions === 1 ? 'trade' : 'trades'}</span>
               </div>
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function ProfilePage() {
             </div>
             <div className="text-center">
               <p className="text-lg font-bold text-gray-900">{stats.totalTransactions}</p>
-              <p className="text-[10px] text-gray-500">Trades</p>
+              <p className="text-[10px] text-gray-500">{stats.totalTransactions === 1 ? 'Trade' : 'Trades'}</p>
             </div>
             <div className="text-center">
               <p className="text-sm font-bold text-gray-900">

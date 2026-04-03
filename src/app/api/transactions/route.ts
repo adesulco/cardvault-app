@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     const formatted = transactions.map((t: any) => ({
       id: t.id,
       cardName: t.listing?.card?.cardName || 'Delisted Card',
-      date: new Date(t.createdAt).toLocaleDateString(),
+      date: new Date(t.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
       role: t.buyerId === activeUserId ? 'buyer' : 'seller',
       buyer: t.buyer?.displayName || 'Unknown Buyer',
       seller: t.seller?.displayName || 'Unknown Seller',
@@ -59,6 +59,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    if (body.totalIdr >= 10000000) {
+      const buyer = await prisma.user.findUnique({ where: { id: body.buyerId || 'mock-buyer-id-999' } });
+      if (buyer?.kycStatus !== 'APPROVED') {
+        return NextResponse.json({ error: 'KYC Verification Required: Transactions over Rp 10.000.000 require approved KYC status.' }, { status: 403 });
+      }
+    }
 
     // In a prod app, we'd wrap this in a prisma.$transaction to guarantee atomic inserts
     const newTransaction = await prisma.transaction.create({
@@ -78,10 +85,19 @@ export async function POST(request: NextRequest) {
     });
 
     if (body.listingId) {
-      await prisma.listing.update({
-        where: { id: body.listingId },
-        data: { status: 'in_transaction' } // Reserve it so it drops from marketplace
-      });
+      const listing = await prisma.listing.findUnique({ where: { id: body.listingId } });
+      if (listing) {
+        await prisma.$transaction([
+          prisma.listing.update({
+            where: { id: body.listingId },
+            data: { status: 'in_transaction' } // Reserve it so it drops from marketplace
+          }),
+          prisma.card.update({
+            where: { id: listing.cardId },
+            data: { status: 'in_transaction' }
+          })
+        ]);
+      }
     }
 
     return NextResponse.json(newTransaction, { status: 201 });

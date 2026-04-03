@@ -21,6 +21,16 @@ interface CardItem {
   favoritesCount?: number;
 }
 
+const getGradeColor = (company?: string | null) => {
+  if (!company) return 'bg-black/70';
+  const c = company.toUpperCase();
+  if (c.includes('PSA')) return 'bg-red-600';
+  if (c.includes('BGS') || c.includes('BECKETT')) return 'bg-yellow-600';
+  if (c.includes('CGC')) return 'bg-green-600';
+  if (c.includes('SGC')) return 'bg-blue-600';
+  return 'bg-black/70';
+};
+
 export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[]; showPrice?: boolean }) {
   if (cards.length === 0) {
     return (
@@ -33,7 +43,7 @@ export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[
 
   return (
     <div className="grid grid-cols-2 gap-3 px-4">
-      {cards.map((card) => (
+      {cards.map((card, index) => (
         <Link
           key={card.id}
           href={card.listingId ? `/explore/${card.listingId}` : `/cards/${card.id}`}
@@ -45,17 +55,20 @@ export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[
             {card.frontImageUrl ? (
               <>
                 <div className="absolute inset-0 bg-slate-200 animate-pulse -z-10" />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={card.frontImageUrl}
                   alt={card.cardName}
-                  className="w-full h-full object-cover transition-opacity duration-700 opacity-0"
-                  onLoad={(e) => { e.currentTarget.classList.remove('opacity-0'); e.currentTarget.parentElement?.classList.remove('animate-pulse'); }}
-                  onError={(e) => {
+                  fill
+                  sizes="(max-width: 768px) 50vw, 33vw"
+                  className="object-cover transition-opacity duration-700 opacity-0"
+                  onLoad={(e: any) => { e.currentTarget.classList.remove('opacity-0'); e.currentTarget.parentElement?.classList.remove('animate-pulse'); }}
+                  onError={(e: any) => {
+                     e.currentTarget.srcset = '';
                      e.currentTarget.src = '/fallback-card.png';
                      e.currentTarget.classList.remove('opacity-0');
                      e.currentTarget.parentElement?.classList.remove('animate-pulse');
                   }}
+                  priority={index < 4}
                 />
               </>
             ) : (
@@ -65,7 +78,7 @@ export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[
             )}
             {/* Grading Badge */}
             {card.condition === 'graded' && card.grade && (
-              <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+              <div className={`absolute top-2 left-2 text-white px-2 py-0.5 rounded-full text-[10px] font-bold ${getGradeColor(card.gradingCompany)}`}>
                 {card.gradingCompany} {card.grade}
               </div>
             )}
@@ -80,10 +93,10 @@ export default function CardGrid({ cards, showPrice = true }: { cards: CardItem[
           </div>
 
           {/* Card Info */}
-          <div className="p-2.5">
-            <h3 className="text-sm font-semibold text-gray-900 truncate" title={card.cardName}>{card.cardName}</h3>
+          <div className="p-2.5 min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900 overflow-hidden text-ellipsis whitespace-nowrap block w-full" title={card.cardName}>{card.cardName}</h3>
             {card.playerOrCharacter && (
-              <p className="text-xs text-gray-500 truncate">{card.playerOrCharacter}</p>
+              <p className="text-xs text-gray-500 truncate" title={card.playerOrCharacter}>{card.playerOrCharacter}</p>
             )}
             {showPrice && card.priceIdr && (
               <div className="mt-1.5">

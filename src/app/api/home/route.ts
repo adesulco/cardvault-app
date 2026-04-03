@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,10 +19,17 @@ export async function GET(request: NextRequest) {
         if (Array.isArray(userIds) && userIds.length > 0) {
           const fetchedSellers = await prisma.user.findMany({
             where: { id: { in: userIds } },
-            select: { id: true, displayName: true, username: true, avatarUrl: true, trustScore: true, totalTransactions: true }
+            select: { id: true, displayName: true, username: true, avatarUrl: true, trustScore: true,
+              _count: {
+                 select: { sellerTransactions: { where: { escrowStatus: 'completed' } } }
+              }
+            }
           });
-          // Restore visual sorting order that an admin might have configured via JSON array index
-          featuredSellers = userIds.map(id => fetchedSellers.find(s => s.id === id)).filter(Boolean);
+          featuredSellers = userIds.map(id => {
+             const s = fetchedSellers.find((u: any) => u.id === id);
+             if (s) return { ...s, totalTransactions: s._count?.sellerTransactions || 0, _count: undefined };
+             return null;
+          }).filter(Boolean);
         }
       } catch (e) {}
     }

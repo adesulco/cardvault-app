@@ -11,7 +11,10 @@ const TAB_DEFINITIONS = [
   { id: 'sold', label: 'Sold' },
 ];
 
+import { useAppStore } from '@/lib/store';
+
 export default function MyCollectionPage() {
+  const { user } = useAppStore();
   const [allCards, setAllCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('collection');
@@ -19,7 +22,8 @@ export default function MyCollectionPage() {
   useEffect(() => {
     const fetchMyCards = async () => {
       try {
-        const response = await fetch('/api/user/cards');
+        if (!user?.id) return;
+        const response = await fetch(`/api/user/cards?userId=${user.id}`);
         if (!response.ok) throw new Error('Failed to fetch');
         const data = await response.json();
         setAllCards(data.cards || []);
@@ -30,7 +34,7 @@ export default function MyCollectionPage() {
       }
     };
     fetchMyCards();
-  }, []);
+  }, [user]);
 
   const getFilteredCards = (tabId: string) => {
      return allCards.filter(c => {
@@ -78,9 +82,9 @@ export default function MyCollectionPage() {
       </div>
 
       {/* Cards Grid */}
-      <CardGrid cards={filtered} showPrice={false} />
-
-      {filtered.length === 0 && (
+      {filtered.length > 0 ? (
+         <CardGrid cards={filtered} showPrice={false} />
+      ) : (
         <div className="text-center py-16 px-4">
           <div className="text-5xl mb-3">📦</div>
           <h3 className="text-base font-semibold text-gray-900">No cards yet</h3>

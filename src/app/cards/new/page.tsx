@@ -54,7 +54,10 @@ export default function AddCardPage() {
      if (!frontImageFile) e.frontImage = "Front Photo specifically required.";
      if (!formData.sportOrCategory) e.sportOrCategory = "Category explicit mapping required.";
      if (!formData.year) e.year = "Year natively required.";
-     if (formData.listForSale && formData.listingMode === 'fixed' && !formData.priceIdr) e.priceIdr = "Listing Price required.";
+     if (formData.listForSale && formData.listingMode === 'fixed') {
+         if (!formData.priceIdr) e.priceIdr = "Listing Price required.";
+         else if (parseInt(formData.priceIdr) < 10000) e.priceIdr = "Minimum constraint: Rp 10.000";
+     }
      if (formData.listForSale && formData.listingMode === 'auction' && !formData.startingBidIdr) e.startingBidIdr = "Starting Bid required.";
      setErrors(e);
      return Object.keys(e).length === 0;

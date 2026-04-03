@@ -10,12 +10,13 @@ import { formatIDR, formatUSD, idrToUsd, calculateFees } from '@/lib/currency';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { preferredCurrency, exchangeRate } = useAppStore();
+  const { preferredCurrency, exchangeRate, user } = useAppStore();
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [selectedGateway, setSelectedGateway] = useState<string>('midtrans');
   const [processing, setProcessing] = useState(false);
   const [step, setStep] = useState<'review' | 'payment' | 'offer' | 'confirmation'>('review');
   const [offerAmount, setOfferAmount] = useState<string>('');
+  const [showKycModal, setShowKycModal] = useState(false);
 
   const params = useParams();
   const listingId = params?.id as string;
@@ -42,6 +43,12 @@ export default function CheckoutPage() {
 
   const handlePayment = async () => {
     if (!selectedPayment || !listing) return;
+
+    if (totalIdr > 10000000 && user?.kycStatus !== 'APPROVED') {
+        setShowKycModal(true);
+        return;
+    }
+
     setProcessing(true);
     
     try {
@@ -320,6 +327,35 @@ export default function CheckoutPage() {
                 </>
               )}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* KYC Modal */}
+      {showKycModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-2">
+              <Shield className="text-rose-500" />
+              KYC Required
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Mandatory regulatory KYC verification must be confirmed via the Admin dashboard before initiating any transactions exceeding Rp 10.000.000.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowKycModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => router.push('/profile/kyc')}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              >
+                Go to Verification
+              </button>
+            </div>
           </div>
         </div>
       )}

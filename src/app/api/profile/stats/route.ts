@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const [cardsCount, watchlistCount, buyerTx, sellerTx, cards] = await Promise.all([
-      prisma.card.count({ where: { ownerId: userId } }),
+      prisma.card.count({ where: { ownerId: userId, status: { notIn: ['sold', 'traded'] } } }),
       prisma.favorite.count({ where: { userId } }),
       prisma.transaction.count({ where: { buyerId: userId, escrowStatus: "completed" } }),
       prisma.transaction.count({ where: { sellerId: userId, escrowStatus: "completed" } }),

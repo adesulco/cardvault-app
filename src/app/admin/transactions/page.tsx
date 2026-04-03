@@ -99,7 +99,7 @@ export default function AdminTransactionsPage() {
   if (selected) {
     const statusInfo = STATUS_MAP[selected.escrowStatus] || { label: selected.escrowStatus, color: 'bg-slate-100 text-slate-700' };
     const price = selected.agreedPriceIdr
-      ? `Rp ${selected.agreedPriceIdr.toLocaleString()}`
+      ? `Rp ${selected.agreedPriceIdr.toLocaleString('id-ID')}`
       : selected.agreedPriceUsd
       ? `$${selected.agreedPriceUsd.toLocaleString()}`
       : 'N/A';
@@ -128,7 +128,7 @@ export default function AdminTransactionsPage() {
               </span>
             </div>
             <p className="text-xl font-bold text-slate-900">{price}</p>
-            <p className="text-xs text-slate-500 mt-1">{selected.transactionType} &middot; Created {new Date(selected.createdAt).toLocaleString()}</p>
+            <p className="text-xs text-slate-500 mt-1">{selected.transactionType} &middot; Created {new Date(selected.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
           </div>
 
           <div className="p-4">
@@ -262,7 +262,7 @@ export default function AdminTransactionsPage() {
           {filteredTx.map(tx => {
             const statusInfo = STATUS_MAP[tx.escrowStatus] || { label: tx.escrowStatus, color: 'bg-slate-100 text-slate-700' };
             const price = tx.agreedPriceIdr
-              ? `Rp ${tx.agreedPriceIdr.toLocaleString()}`
+              ? `Rp ${tx.agreedPriceIdr.toLocaleString('id-ID')}`
               : tx.agreedPriceUsd
               ? `$${tx.agreedPriceUsd.toLocaleString()}`
               : 'N/A';
@@ -281,7 +281,7 @@ export default function AdminTransactionsPage() {
                 </div>
                 <p className="text-sm font-semibold text-slate-900 mb-1">{price}</p>
                 <p className="text-xs text-slate-500">
-                  {tx.buyer.displayName || 'Unnamed'} → {tx.seller.displayName || 'Unnamed'} &middot; {new Date(tx.createdAt).toLocaleDateString()}
+                  {tx.buyer.displayName || 'Unnamed'} → {tx.seller.displayName || 'Unnamed'} &middot; {new Date(tx.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </p>
               </button>
             );

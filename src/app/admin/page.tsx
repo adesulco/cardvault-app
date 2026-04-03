@@ -93,14 +93,14 @@ export default function AdminDashboard() {
 
   const formatDate = (date: string) => {
     const d = new Date(date);
-    return d.toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   const STAT_CARDS = stats ? [
     { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'bg-blue-500', href: '/admin/users' },
     { label: 'Active Listings', value: stats.activeListings, icon: Package, color: 'bg-purple-500', href: '/admin/listings' },
     { label: 'Total Transactions', value: stats.totalTransactions, icon: ArrowLeftRight, color: 'bg-emerald-500', href: '/admin/transactions' },
-    { label: 'Platform Fees (Revenue)', value: formatCurrency(stats.totalRevenue), isFormatted: true, icon: DollarSign, color: 'bg-green-500', href: '/admin/financials' },
+    { label: 'Platform Fees', value: formatCurrency(stats.totalRevenue), isFormatted: true, icon: DollarSign, color: 'bg-green-500', href: '/admin/financials' },
     { label: 'Pending KYC', value: stats.pendingKyc, icon: ShieldCheck, color: 'bg-amber-500', href: '/admin/kyc' },
     { label: 'Open Disputes', value: stats.openDisputes, icon: AlertTriangle, color: 'bg-red-500', href: '/admin/disputes' },
   ] : [];

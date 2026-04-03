@@ -28,6 +28,14 @@ export default function ListingDetailPage() {
       .then(data => {
          if (data.listing) setListing(data.listing);
          setLoading(false);
+         // Fire V11-015 View Tracking mapping session explicitly
+         const sessionHash = typeof window !== 'undefined' ? (window.sessionStorage.getItem('cv_anon_tracking') || Math.random().toString(36).slice(2)) : 'anon';
+         if (typeof window !== 'undefined') window.sessionStorage.setItem('cv_anon_tracking', sessionHash);
+         fetch(`/api/listings/${params.id}/views`, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ sessionId: sessionHash })
+         }).catch(() => {});
       })
       .catch((err) => { console.error(err); setLoading(false); });
   }, [params.id]);
@@ -54,6 +62,12 @@ export default function ListingDetailPage() {
     if (!user) { alert('Please log in to participate'); return router.push('/auth/login'); }
     if (!offerAmount) return;
     
+    // V11-027 KYC Active Enforcement mapped physically to limit structural bypass
+    if (parseInt(offerAmount) > 10000000 && user.kycStatus !== 'APPROVED') {
+        alert('KYC IDENTIFICATION REQUIRED: Mandatory regulatory KYC verification must be confirmed via the Admin dashboard before initiating any transactions exceeding Rp 10.000.000');
+        return;
+    }
+
     try {
       if (listing.listingMode === 'auction') {
          const res = await fetch(`/api/listings/${listing.id}/bids`, {
@@ -123,7 +137,7 @@ export default function ListingDetailPage() {
       <div className="px-4 space-y-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900">{listing.cardName}</h1>
-          <p className="text-sm text-gray-500">{listing.playerOrCharacter} · {listing.year} · {listing.setName}</p>
+          <p className="text-sm text-gray-500">{[listing.playerOrCharacter, listing.year, listing.setName].filter(Boolean).join(' · ')}</p>
         </div>
 
         {/* Price Engine */}
@@ -218,7 +232,7 @@ export default function ListingDetailPage() {
                     {listing.seller.trustScore}
                   </span>
                   <span>·</span>
-                  <span>{listing.seller.totalTransactions} trades</span>
+                  <span>{listing.seller.totalTransactions} {listing.seller.totalTransactions === 1 ? 'trade' : 'trades'}</span>
                 </div>
               </div>
             </div>

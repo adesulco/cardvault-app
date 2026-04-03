@@ -48,7 +48,13 @@ export async function PATCH(request: NextRequest) {
     const updated = await prisma.transaction.update({
       where: { id: transactionId },
       data,
+      include: { listing: true }
     });
+
+    if (escrowStatus === 'completed' && updated.listing) {
+      await prisma.listing.update({ where: { id: updated.listing.id }, data: { status: 'sold' } });
+      await prisma.card.update({ where: { id: updated.listing.cardId }, data: { status: 'sold' } });
+    }
 
     return NextResponse.json({ success: true, transaction: updated });
   } catch (error: any) {

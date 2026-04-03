@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { unstable_cache } from 'next/cache';
+
+export const revalidate = 60;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -8,15 +11,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!listingId) return NextResponse.json({ error: 'Listing ID required' }, { status: 400 });
 
-    const listing = await prisma.listing.findUnique({
-      where: { id: listingId },
-      include: {
-        card: true,
-        seller: {
-          select: { id: true, displayName: true, trustScore: true, kycStatus: true, location: true, totalTransactions: true, avatarUrl: true, idDocumentUrl: true }
+    const getListing = unstable_cache(async (id: string) => {
+      return prisma.listing.findUnique({
+        where: { id },
+        include: {
+          card: true,
+          seller: {
+            select: { id: true, displayName: true, trustScore: true, kycStatus: true, location: true, totalTransactions: true, avatarUrl: true, idDocumentUrl: true }
+          }
         }
-      }
-    });
+      });
+    }, ['listing-fetch'], { revalidate: 3600 });
+    
+    const listing = await getListing(listingId);
 
     if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
 

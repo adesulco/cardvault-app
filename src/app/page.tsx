@@ -5,29 +5,14 @@ import { useAppStore } from '@/lib/store';
 import { BadgeCheck, ChevronRight, Star } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
-const BelowFold = dynamic(() => import('@/components/home/BelowFold'), {
-  loading: () => <div className="w-full h-96 mt-8 animate-pulse bg-slate-200 rounded-xl" />,
-  ssr: false
-});
+const BelowFold = dynamic(() => import('@/components/home/BelowFold'), { ssr: false });
 
 export default function HomePage() {
   const user = useAppStore((state) => state.user);
   const [homeData, setHomeData] = useState<any>({
-    featuredSellers: [
-      { id: 'mock-1', displayName: 'CardVault Official', avatarUrl: '/mock/blue_eyes_slab_1775067182285.png', totalTransactions: 154 },
-      { id: 'mock-2', displayName: 'Kanto Curator', avatarUrl: '/mock/charizard_slab_1775067166104.png', totalTransactions: 89 },
-      { id: 'mock-3', displayName: 'TokyoCards', avatarUrl: '/mock/ohtani_slab_1775067262564.png', totalTransactions: 42 }
-    ],
-    featuredListings: [
-      { id: 'mock-lst-1', card: { cardName: 'Charizard Base Set Holo', frontImageUrl: '/mock/charizard_slab_1775067166104.png' }, priceIdr: 15500000, seller: { displayName: 'CardVault Official' } },
-      { id: 'mock-lst-2', card: { cardName: 'Blue-Eyes White Dragon', frontImageUrl: '/mock/blue_eyes_slab_1775067182285.png' }, priceIdr: 45000000, seller: { displayName: 'Kanto Curator' } },
-      { id: 'mock-lst-3', card: { cardName: 'Shohei Ohtani Chrome RC', frontImageUrl: '/mock/ohtani_slab_1775067262564.png' }, priceIdr: 25000000, seller: { displayName: 'TokyoCards' } }
-    ],
-    latestUploads: [
-      { id: 'mock-new-1', card: { cardName: 'Babe Ruth Vintage 1933', frontImageUrl: '/mock/ohtani_slab_1775067262564.png' }, priceIdr: 125000000, seller: { displayName: 'VintageVault' } },
-      { id: 'mock-new-2', card: { cardName: 'Pikachu Illustrator SSR', frontImageUrl: '/mock/charizard_slab_1775067166104.png' }, priceIdr: 85000000, seller: { displayName: 'Kanto Curator' } },
-      { id: 'mock-new-3', card: { cardName: 'Dark Magician Ghost Rare', frontImageUrl: '/mock/blue_eyes_slab_1775067182285.png' }, priceIdr: 18000000, seller: { displayName: 'TokyoCards' } }
-    ],
+    featuredSellers: [],
+    featuredListings: [],
+    latestUploads: [],
     banners: []
   });
 
@@ -221,6 +206,11 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Featured Marketplace Content */}
+      <div className="mt-8">
+        <BelowFold homeData={homeData} />
       </div>
 
     </div>

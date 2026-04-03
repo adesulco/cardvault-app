@@ -70,7 +70,8 @@ async function main() {
               cardName: 'Charizard Base Set Holo - Unlimited',
               ownerId: users[0].id,
               condition: 'graded',
-              grade: 'PSA 9',
+              gradingCompany: 'PSA',
+              grade: '10',
               sportOrCategory: 'Pokémon',
               frontImageUrl: 'https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?auto=format&fit=crop&w=600&q=80'
            }

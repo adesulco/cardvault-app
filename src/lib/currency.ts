@@ -43,8 +43,7 @@ export function usdToIdr(usdAmount: number, rate: number): number {
 }
 
 export function formatIDR(amount: number): string {
-  // Using en-US forces ',' for thousands and '.' for decimals while retaining IDR symbol
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,

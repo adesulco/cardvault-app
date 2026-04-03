@@ -22,7 +22,7 @@ app.prepare().then(() => {
   });
 
   const io = new Server(server, {
-    cors: { origin: '*' }
+    cors: { origin: ['https://beta.cardvault.id', 'https://admin.cardvault.id', 'http://localhost:3000'] }
   });
 
   io.on('connection', (socket) => {

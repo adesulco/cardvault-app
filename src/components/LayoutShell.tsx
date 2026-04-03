@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
@@ -13,12 +13,16 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const { setExchangeRate } = useAppStore();
   const router = useRouter();
 
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
+
   useEffect(() => {
-    const isPublic = pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/gate');
+    if (!hydrated) return;
+    const isPublic = pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/gate') || pathname.startsWith('/explore');
     if (!user && !isPublic && !isAdmin && !isGate) {
       router.replace('/');
     }
-  }, [user, pathname, isAdmin, isGate, router]);
+  }, [user, pathname, isAdmin, isGate, router, hydrated]);
 
   useEffect(() => {
     // Service Worker currently deferred
@@ -62,12 +66,16 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   // Consumer pages get the normal mobile shell
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-slate-50 relative shadow-2xl overflow-x-hidden border-l border-r border-gray-200">
+    <div className="max-w-md mx-auto h-[100dvh] overflow-y-auto bg-slate-50 relative shadow-2xl overflow-x-hidden border-l border-r border-gray-200">
       <Header />
       <main className="pt-14 pb-20 relative">
+        {/* Version stamp */}
+        <div className="absolute top-0 right-4 pt-1 flex items-center justify-end pointer-events-none">
+           <span className="text-[9px] font-bold text-gray-300 pointer-events-auto bg-white/50 px-1 rounded">v0.82.0</span>
+        </div>
         <div className="w-full h-full">{children}</div>
         <div className="text-center pb-8 pt-4 text-[10px] text-slate-400 font-mono tracking-widest uppercase shrink-0" aria-hidden="true">
-           CardVault Build v0.8
+           CardVault Build v0.82.0
         </div>
       </main>
       {user && <BottomNav />}

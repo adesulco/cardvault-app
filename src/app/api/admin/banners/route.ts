@@ -1,3 +1,4 @@
+import { requireAdminAuth } from '@/lib/admin-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
@@ -17,6 +18,9 @@ export async function GET() {
 
 // Create a new banner
 export async function POST(request: NextRequest) {
+  const authError = await requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const { imageUrl, linkUrl, altText, isActive, sortOrder } = await request.json();
     if (!imageUrl) return NextResponse.json({ error: 'Image URL is required' }, { status: 400 });
@@ -38,6 +42,9 @@ export async function POST(request: NextRequest) {
 
 // Update or Delete a banner
 export async function PATCH(request: NextRequest) {
+  const authError = await requireAdminAuth(request);
+  if (authError) return authError;
+
   try {
     const { id, imageUrl, linkUrl, altText, isActive, sortOrder, action } = await request.json();
     if (!id) return NextResponse.json({ error: 'Banner ID required' }, { status: 400 });

@@ -17,7 +17,7 @@ interface AppState {
 
   setCurrency: (currency: 'IDR' | 'USD') => void;
   setExchangeRate: (rate: number) => void;
-  setUser: (user: AppState['user']) => void;
+  setUser: (user: Omit<AppState['user'], 'role'> & { role?: string } | null) => void;
   logout: () => void;
 }
 
@@ -30,7 +30,15 @@ export const useAppStore = create<AppState>()(
 
       setCurrency: (currency) => set({ preferredCurrency: currency }),
       setExchangeRate: (rate) => set({ exchangeRate: rate }),
-      setUser: (user) => set({ user, preferredCurrency: user?.preferredCurrency || 'IDR' }),
+      setUser: (user) => {
+        if (typeof window !== 'undefined') localStorage.removeItem('cv_session'); // Purge old tokens
+        if (!user) return set({ user: null });
+        const safeUser = { ...user } as any;
+        delete safeUser.role; // Strip role from client storage as per V12-002
+        delete safeUser.isAdmin;
+        delete safeUser.userRole;
+        set({ user: safeUser, preferredCurrency: safeUser?.preferredCurrency || 'IDR' });
+      },
       logout: () => set({ user: null }),
     }),
     {

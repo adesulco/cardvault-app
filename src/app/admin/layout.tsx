@@ -51,7 +51,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   });
 
   // Skip auth check for the login page
-  const isLoginPage = pathname === '/admin/login';
+  const isLoginPage = pathname?.includes('/login');
 
   useEffect(() => {
     if (isLoginPage) {
@@ -185,9 +185,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Footer */}
           <div className="border-t border-slate-700 p-4 space-y-3">
+            <div className="p-4 border-t border-slate-800 text-xs text-slate-500 font-medium">
+              CVOS v0.81.2 &copy; {new Date().getFullYear()}
+            </div>
             <div>
               <p className="text-xs text-slate-400 mb-2 truncate">{user.email}</p>
-              <p className="text-[10px] text-slate-500 font-mono" aria-hidden="true">admin.cardvault.id v0.8</p>
             </div>
             <button
               onClick={handleLogout}
