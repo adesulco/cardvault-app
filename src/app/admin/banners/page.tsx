@@ -110,8 +110,11 @@ export default function BannersPage() {
         </div>
       </div>
 
-      {loading && banners.length === 0 ? (
-        <p className="text-sm text-gray-500">Loading banners...</p>
+      {loading ? (
+        <div className="flex justify-center p-8">
+           <RefreshCw className="animate-spin text-gray-400" size={24} />
+           <p className="ml-2 text-sm text-gray-500">Loading banners...</p>
+        </div>
       ) : (
         <div className="bg-white border text-sm border-gray-200 rounded-lg shadow-sm overflow-hidden">
           <table className="w-full text-left">
