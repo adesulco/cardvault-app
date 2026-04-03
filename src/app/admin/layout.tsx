@@ -186,7 +186,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Footer */}
           <div className="border-t border-slate-700 p-4 space-y-3">
             <div className="p-4 border-t border-slate-800 text-xs text-slate-500 font-medium">
-              CVOS v0.82.0 &copy; {new Date().getFullYear()}
+              CVOS v0.85.0 &copy; {new Date().getFullYear()}
             </div>
             <div>
               <p className="text-xs text-slate-400 mb-2 truncate">{user.email}</p>
