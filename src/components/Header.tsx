@@ -21,7 +21,10 @@ export default function Header() {
       if (now - lastNotifFetch < 4000) return; // Hard deduplication cutoff
 
       if (!activeNotifPromise) {
-         activeNotifPromise = fetch(`/api/notifications`).then(res => res.json());
+         activeNotifPromise = fetch('/api/auth/session').then(res => {
+            if (res.ok) return fetch(`/api/notifications`).then(r => r.json());
+            throw new Error('Unauthenticated');
+         });
       }
       
       activeNotifPromise.then(data => {

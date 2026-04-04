@@ -20,6 +20,7 @@ export default function ListingDetailPage() {
   const [listing, setListing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState<string>('');
+  const [imageError, setImageError] = useState(false);
 
   React.useEffect(() => {
     if (!params?.id) return;
@@ -121,10 +122,18 @@ export default function ListingDetailPage() {
 
       {/* Card Image */}
       <div className="mx-4 aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center relative overflow-hidden shadow-sm border border-gray-100">
-        {listing.frontImageUrl ? (
-          <img src={listing.frontImageUrl} alt={listing.cardName} className="w-full h-full object-cover" />
+        {listing.frontImageUrl && !imageError ? (
+          <img 
+            src={listing.frontImageUrl} 
+            alt={listing.cardName} 
+            className="w-full h-full object-cover" 
+            onError={() => setImageError(true)}
+          />
         ) : (
-          <span className="text-6xl text-gray-400 mix-blend-multiply">🃏</span>
+          <div className="flex flex-col items-center justify-center text-gray-400 mix-blend-multiply opacity-60">
+             <Shield size={48} className="mb-2" />
+             <span className="text-xs font-bold tracking-widest text-center mt-2 px-4 uppercase">Image Unavailable</span>
+          </div>
         )}
         {listing.condition === 'graded' && (
           <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold border border-white/10 shadow-lg">

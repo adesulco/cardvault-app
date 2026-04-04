@@ -25,7 +25,6 @@ function applySecurityHeaders(request: NextRequest, response: NextResponse, nonc
     response.headers.set('Vary', 'Origin');
   } else {
     // Prevent wildcard fallbacks natively
-    // Prevent wildcard fallbacks natively, default to the requested host
     const host = request.headers.get('host');
     response.headers.set(
       'Access-Control-Allow-Origin',
@@ -38,6 +37,10 @@ function applySecurityHeaders(request: NextRequest, response: NextResponse, nonc
   const isProd = process.env.NODE_ENV === 'production';
   const cspHeader = `default-src 'self'; script-src 'self' 'nonce-${nonce}' 'strict-dynamic' ${isProd ? '' : "'unsafe-eval'"}; style-src 'self' 'nonce-${nonce}' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`;
   response.headers.set('Content-Security-Policy', cspHeader.replace(/\s{2,}/g, ' ').trim());
+
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
+  }
 
   return response;
 }
@@ -68,17 +71,48 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Admin routing
+  // 2. Admin routing & Auth Filter
   const isAdminDomain = hostname === 'admin.cardvault.id';
 
   if (isAdminDomain) {
     let response = NextResponse.next({ request: { headers: requestHeaders } });
+    
+    // Check for explicit session cookie
+    const hasAdminSession = request.cookies.has('admin_token');
+    
+    const isApi = pathname.startsWith('/api/');
+    const isLogin = pathname === '/admin/login' || pathname === '/login';
+    const isPublicStatic = pathname.startsWith('/_next') || pathname.startsWith('/favicon') || pathname.startsWith('/manifest');
+
+    if (!hasAdminSession && !isLogin && !isPublicStatic) {
+       if (isApi) {
+          if (pathname === '/api/admin/session') {
+            // Let the login POST request go through natively
+          } else {
+            return buildResponse(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+          }
+       } else {
+          const url = request.nextUrl.clone();
+          url.pathname = '/admin/login';
+          return buildResponse(NextResponse.redirect(url));
+       }
+    }
+
+    if (pathname === '/admin/dashboard' || pathname === '/admin/dashboard/') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin';
+      return buildResponse(NextResponse.redirect(url));
+    }
+    
+    if (pathname === '/admin/promo-banners' || pathname === '/admin/promo-banners/') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin/banners';
+      return buildResponse(NextResponse.redirect(url));
+    }
 
     if (
-      !pathname.startsWith('/api/') &&
-      !pathname.startsWith('/_next') &&
-      !pathname.startsWith('/favicon') &&
-      !pathname.startsWith('/manifest') &&
+      !isApi &&
+      !isPublicStatic &&
       !pathname.startsWith('/admin')
     ) {
       const url = request.nextUrl.clone();
@@ -90,20 +124,13 @@ export function middleware(request: NextRequest) {
         url.pathname = `/admin${pathname}`;
       }
       response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
-    } else if (pathname === '/admin/dashboard') {
-      const url = request.nextUrl.clone();
-      url.pathname = '/admin';
-      return buildResponse(NextResponse.redirect(url));
-    } else if (pathname === '/admin/promo-banners') {
-      const url = request.nextUrl.clone();
-      url.pathname = '/admin/banners';
-      return buildResponse(NextResponse.redirect(url));
     }
+    
     return buildResponse(response);
   }
 
   // 3. Password gate
-  const isMainDomain = hostname === 'www.cardvault.id' || hostname === 'cardvault.id';
+  const isMainDomain = hostname === 'www.cardvault.id' || hostname === 'cardvault.id' || hostname === 'beta.cardvault.id' || hostname === 'localhost:3000';
   if (!isMainDomain) {
     return buildResponse(NextResponse.next({ request: { headers: requestHeaders } }));
   }
@@ -119,7 +146,7 @@ export function middleware(request: NextRequest) {
   }
 
   const accessCookie = request.cookies.get(GATE_COOKIE_NAME);
-  if (accessCookie?.value === 'granted') {
+  if (accessCookie?.value === 'granted' || process.env.NODE_ENV !== 'production') {
     const isAuth = request.cookies.has('next-auth.session-token') || request.cookies.has('__Secure-next-auth.session-token') || request.cookies.has('cv_session_token');
     const isPublic = pathname === '/' || pathname.startsWith('/auth') || pathname === '/gate';
     const isStatic = pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.startsWith('/favicon') || pathname.startsWith('/manifest') || pathname.startsWith('/seed');
