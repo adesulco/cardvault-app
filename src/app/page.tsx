@@ -208,11 +208,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Featured Marketplace Content */}
-      <div className="mt-8">
-        <BelowFold homeData={homeData} />
-      </div>
-
     </div>
   );
 }

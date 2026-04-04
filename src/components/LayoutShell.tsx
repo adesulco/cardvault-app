@@ -18,7 +18,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!hydrated) return;
-    const isPublic = pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/gate') || pathname.startsWith('/explore');
+    const isPublic = pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/gate');
     if (!user && !isPublic && !isAdmin && !isGate) {
       router.replace('/');
     }
