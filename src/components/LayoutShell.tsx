@@ -48,15 +48,15 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
 
 
-  const isMarketingLanding = pathname === '/';
-  const isAuthRoute = pathname.startsWith('/auth');
-
-  if (isAdmin || isGate) {
-    // Admin structures and explicit boundary gates remain globally unrestrained physically
+  if (isAdmin) {
+    // Admin structures remain globally unrestrained physically
     return <>{children}</>;
   }
 
-  if (isMarketingLanding || isAuthRoute || !user) {
+  const isMarketingLanding = pathname === '/';
+  const isAuthRoute = pathname.startsWith('/auth');
+
+  if (isGate || isMarketingLanding || isAuthRoute || !user) {
     // Consumer unauthenticated boundaries get strictly boxed into the mobile container seamlessly but without Header/BottomNav
     return (
       <div className="max-w-md mx-auto h-[100dvh] overflow-y-auto bg-slate-50 relative shadow-2xl overflow-x-hidden border-l border-r border-gray-200">
