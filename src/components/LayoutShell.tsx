@@ -51,12 +51,30 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const isMarketingLanding = pathname === '/';
   const isAuthRoute = pathname.startsWith('/auth');
 
-  if (isAdmin || isGate || isMarketingLanding || isAuthRoute || !user) {
-    // Admin pages, Auth pages, Landing, or any unauthenticated state render without Header/BottomNav
+  if (isAdmin || isGate) {
+    // Admin structures and explicit boundary gates remain globally unrestrained physically
     return <>{children}</>;
   }
 
-  // Consumer pages get the normal mobile shell
+  if (isMarketingLanding || isAuthRoute || !user) {
+    // Consumer unauthenticated boundaries get strictly boxed into the mobile container seamlessly but without Header/BottomNav
+    return (
+      <div className="max-w-md mx-auto h-[100dvh] overflow-y-auto bg-slate-50 relative shadow-2xl overflow-x-hidden border-l border-r border-gray-200">
+        <main className="w-full h-full relative">
+          {/* Version stamp */}
+          <div className="absolute top-0 right-4 pt-1 flex items-center justify-end pointer-events-none z-10">
+             <span className="text-[9px] font-bold text-gray-400 pointer-events-auto bg-white/50 px-1 rounded">v0.9.0</span>
+          </div>
+          <div className="w-full h-full">{children}</div>
+          <div className="text-center pb-8 pt-4 text-[10px] text-slate-400 font-mono tracking-widest uppercase shrink-0" aria-hidden="true">
+             <p>CardVault Build v0.9.0</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Consumer authenticated marketplace pages get the normal mobile shell globally
   return (
     <div className="max-w-md mx-auto h-[100dvh] overflow-y-auto bg-slate-50 relative shadow-2xl overflow-x-hidden border-l border-r border-gray-200">
       <Header />
