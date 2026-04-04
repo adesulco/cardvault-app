@@ -208,7 +208,7 @@ export default function CheckoutPage() {
     <div className="pb-32">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <button onClick={() => step !== 'review' && step !== 'confirmation' ? setStep('review') : router.back()} className="p-1 text-gray-600">
+        <button onClick={() => step !== 'review' ? setStep('review') : router.back()} className="p-1 text-gray-600">
           <ArrowLeft size={22} />
         </button>
         <h1 className="text-lg font-bold text-gray-900">
