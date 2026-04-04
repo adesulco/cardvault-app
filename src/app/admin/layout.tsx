@@ -186,10 +186,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Footer */}
           <div className="border-t border-slate-700 p-4 space-y-3">
             <div className="p-4 border-t border-slate-800 text-xs text-slate-500 font-medium">
-              CardVault Admin v0.9.0 &copy; {new Date().getFullYear()}
+              CardVault Admin v{process.env.NEXT_PUBLIC_APP_VERSION || '0.9.1'} &copy; {new Date().getFullYear()}
             </div>
             <div>
-              <p className="text-xs text-slate-400 mb-2 truncate">{user.email}</p>
+              <p className="text-xs text-slate-400 mb-2 truncate" title={user.email}>
+                {(() => {
+                  const [local, domain] = user.email.split('@');
+                  if (!domain) return user.email;
+                  return `${local.slice(0, 3)}***@${domain}`;
+                })()}
+              </p>
             </div>
             <button
               onClick={handleLogout}

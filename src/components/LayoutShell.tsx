@@ -61,14 +61,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     return (
       <div className="max-w-md mx-auto h-[100dvh] overflow-y-auto bg-slate-50 relative shadow-2xl overflow-x-hidden border-l border-r border-gray-200">
         <main className="w-full h-full relative">
-          {/* Version stamp */}
-          <div className="absolute top-0 right-4 pt-1 flex items-center justify-end pointer-events-none z-10">
-             <span className="text-[9px] font-bold text-gray-400 pointer-events-auto bg-white/50 px-1 rounded">v0.9.0</span>
-          </div>
           <div className="w-full h-full">{children}</div>
-          <div className="text-center pb-8 pt-4 text-[10px] text-slate-400 font-mono tracking-widest uppercase shrink-0" aria-hidden="true">
-             <p>CardVault Build v0.9.0</p>
-          </div>
         </main>
       </div>
     );
@@ -79,14 +72,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     <div className="max-w-md mx-auto h-[100dvh] overflow-y-auto bg-slate-50 relative shadow-2xl overflow-x-hidden border-l border-r border-gray-200">
       <Header />
       <main className="pt-14 pb-20 relative">
-        {/* Version stamp */}
-        <div className="absolute top-0 right-4 pt-1 flex items-center justify-end pointer-events-none">
-           <span className="text-[9px] font-bold text-gray-300 pointer-events-auto bg-white/50 px-1 rounded">v0.9.0</span>
-        </div>
         <div className="w-full h-full">{children}</div>
-        <div className="text-center pb-8 pt-4 text-[10px] text-slate-400 font-mono tracking-widest uppercase shrink-0" aria-hidden="true">
-           <p>CardVault Build v0.9.0</p>
-        </div>
       </main>
       {user && <BottomNav />}
     </div>

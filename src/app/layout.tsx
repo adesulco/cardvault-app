@@ -4,6 +4,7 @@ import './globals.css';
 import LayoutShell from '@/components/LayoutShell';
 import Providers from '@/components/Providers';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { WebVitals } from '@/components/WebVitals';
 import prisma from '@/lib/prisma';
 import { headers } from 'next/headers';
 import { unstable_cache } from 'next/cache';
@@ -44,6 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
          <Providers>
             <LayoutShell>{children}</LayoutShell>
          </Providers>
+         <WebVitals />
       </body>
       {gaId && <GoogleAnalytics gaId={gaId} />}
     </html>

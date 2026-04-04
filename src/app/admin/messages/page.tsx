@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search } from 'lucide-react';
 
 interface Message {
@@ -61,6 +61,27 @@ export default function MessagesPage() {
   const truncateContent = (content: string, length = 50) => {
     return content.length > length ? content.substring(0, length) + '...' : content;
   };
+
+  const memoizedMessages = useMemo(() => {
+    return messages.map((message) => {
+      let parsedTx = 'N/A';
+      if (message.transactionId) {
+        parsedTx = message.transactionId.slice(0, 8) + '...';
+      } else {
+        try {
+          const parsed = JSON.parse(message.content);
+          if (parsed.listingId) parsedTx = `[Inq] ${parsed.listingId.slice(0, 6)}`;
+        } catch (e) {}
+      }
+
+      return {
+        ...message,
+        formattedDate: formatDate(message.createdAt),
+        parsedTx,
+        shortContent: truncateContent(message.content)
+      };
+    });
+  }, [messages]);
 
   return (
     <div className="space-y-6">
@@ -127,22 +148,15 @@ export default function MessagesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {messages.map((message) => (
+                {memoizedMessages.map((message) => (
                   <tr key={message.id} className="hover:bg-slate-50">
                     <td className="py-3 px-4 text-xs text-slate-600">{message.sender.displayName || message.sender.email}</td>
                     <td className="py-3 px-4 text-xs text-slate-600">{message.recipient.displayName || message.recipient.email}</td>
                     <td className="py-3 px-4 text-xs text-slate-700" title={message.content}>
-                      {truncateContent(message.content)}
+                      {message.shortContent}
                     </td>
                     <td className="py-3 px-4 text-xs font-mono text-slate-600">
-                      {(() => {
-                        if (message.transactionId) return message.transactionId.slice(0, 8) + '...';
-                        try {
-                          const parsed = JSON.parse(message.content);
-                          if (parsed.listingId) return `[Inq] ${parsed.listingId.slice(0, 6)}`;
-                        } catch (e) {}
-                        return 'N/A';
-                      })()}
+                      {message.parsedTx}
                     </td>
                     <td className="py-3 px-4">
                       <span
@@ -153,7 +167,7 @@ export default function MessagesPage() {
                         {message.isRead ? 'Read' : 'Unread'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-xs text-slate-500">{formatDate(message.createdAt)}</td>
+                    <td className="py-3 px-4 text-xs text-slate-500">{message.formattedDate}</td>
                   </tr>
                 ))}
               </tbody>

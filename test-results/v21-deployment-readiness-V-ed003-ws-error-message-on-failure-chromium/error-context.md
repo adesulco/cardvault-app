@@ -39,24 +39,25 @@ Call log:
         - img [ref=e14]
         - text: Continue with Google
       - generic [ref=e21]: or email
-      - generic [ref=e23]:
-        - generic [ref=e24]:
-          - img [ref=e25]
-          - textbox "Email address" [ref=e28]
-        - generic [ref=e29]:
-          - img [ref=e30]
-          - textbox "Password" [ref=e33]
-          - button [ref=e34]:
-            - img [ref=e35]
-        - link "Forgot password?" [ref=e39] [cursor=pointer]:
+      - generic [ref=e23]: Google Sign-in failed. Please try again or use email login.
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - img [ref=e26]
+          - textbox "Email address" [ref=e29]
+        - generic [ref=e30]:
+          - img [ref=e31]
+          - textbox "Password" [ref=e34]
+          - button [ref=e35]:
+            - img [ref=e36]
+        - link "Forgot password?" [ref=e40] [cursor=pointer]:
           - /url: /auth/forgot-password
-        - button "Sign In" [ref=e40]
-      - paragraph [ref=e41]:
+        - button "Sign In" [ref=e41]
+      - paragraph [ref=e42]:
         - text: Don't have an account?
-        - link "Sign Up" [ref=e42] [cursor=pointer]:
+        - link "Sign Up" [ref=e43] [cursor=pointer]:
           - /url: /auth/register
-    - paragraph [ref=e44]: CardVault Build v0.9.0
-  - alert [ref=e45]
+    - paragraph [ref=e45]: CardVault Build v0.9.0
+  - alert [ref=e46]
 ```
 
 # Test source
