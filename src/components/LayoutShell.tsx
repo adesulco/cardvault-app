@@ -52,14 +52,14 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  const isLandingAnonymous = pathname === '/' && !user;
-
   const isPublicRoute = pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/gate');
   if (!user && !isPublicRoute && !isAdmin && !isGate) {
     return <div className="min-h-screen bg-slate-50" />; // Prevent flash of unauthorized content
   }
 
-  if (isAdmin || isGate || isLandingAnonymous) {
+  const isMarketingLanding = pathname === '/';
+
+  if (isAdmin || isGate || isMarketingLanding) {
     // Admin pages and Anonymous Landing render without Header/BottomNav
     return <>{children}</>;
   }
