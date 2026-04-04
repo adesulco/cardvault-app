@@ -58,9 +58,10 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   }
 
   const isMarketingLanding = pathname === '/';
+  const isAuthRoute = pathname.startsWith('/auth');
 
-  if (isAdmin || isGate || isMarketingLanding) {
-    // Admin pages and Anonymous Landing render without Header/BottomNav
+  if (isAdmin || isGate || isMarketingLanding || isAuthRoute || !user) {
+    // Admin pages, Auth pages, Landing, or any unauthenticated state render without Header/BottomNav
     return <>{children}</>;
   }
 
