@@ -56,6 +56,26 @@ export async function PATCH(request: NextRequest) {
       await prisma.card.update({ where: { id: updated.listing.cardId }, data: { status: 'sold' } });
     }
 
+    if (escrowStatus === 'payment_held' && updated.paymentMethodType === 'bank_transfer_manual') {
+      const netAmount = updated.agreedPriceIdr || 0;
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: updated.sellerId },
+          data: { walletBalanceIdr: { increment: netAmount } }
+        }),
+        prisma.walletTransaction.create({
+          data: {
+            userId: updated.sellerId,
+            amountIdr: netAmount,
+            type: 'escrow_sale',
+            description: `Escrow transfer verified for Tx #${updated.id.slice(0, 8)}`,
+            referenceId: updated.id,
+            status: 'completed'
+          }
+        })
+      ]);
+    }
+
     return NextResponse.json({ success: true, transaction: updated });
   } catch (error: any) {
     console.error('Error updating transaction:', error);

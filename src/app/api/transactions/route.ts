@@ -79,7 +79,8 @@ export async function POST(request: NextRequest) {
         buyerPaidAmount: body.totalIdr,
         paymentGateway: body.paymentGateway,
         paymentMethodType: body.paymentMethodType,
-        escrowStatus: 'payment_held', // Immediately holding in escrow after mock payment
+        manualTransferProofUrl: body.manualTransferProofUrl || null,
+        escrowStatus: body.paymentMethodType === 'bank_transfer_manual' ? 'pending_payment' : 'payment_held',
         paymentIdempotencyKey: crypto.randomUUID()
       }
     });

@@ -12,9 +12,9 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { preferredCurrency, exchangeRate, user } = useAppStore();
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
-  const [selectedGateway, setSelectedGateway] = useState<string>('midtrans');
+  const [selectedGateway, setSelectedGateway] = useState<string>('manual');
   const [processing, setProcessing] = useState(false);
-  const [step, setStep] = useState<'review' | 'payment' | 'offer' | 'confirmation'>('review');
+  const [step, setStep] = useState<'review' | 'payment' | 'upload_proof' | 'offer' | 'confirmation'>('review');
   const [offerAmount, setOfferAmount] = useState<string>('');
   const [showKycModal, setShowKycModal] = useState(false);
 
@@ -40,6 +40,9 @@ export default function CheckoutPage() {
   const fees = calculateFees(listing.priceIdr, 'sale', false);
   const totalIdr = fees.totalIdr;
   const totalUsd = idrToUsd(totalIdr, exchangeRate);
+  
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofUrl, setProofUrl] = useState<string | null>(null);
 
   const handlePayment = async () => {
     if (!selectedPayment || !listing) return;
@@ -47,6 +50,11 @@ export default function CheckoutPage() {
     if (totalIdr > 10000000 && user?.kycStatus !== 'APPROVED') {
         setShowKycModal(true);
         return;
+    }
+
+    if (selectedPayment === 'bank_transfer_manual') {
+      setStep('upload_proof');
+      return;
     }
 
     setProcessing(true);
@@ -67,6 +75,57 @@ export default function CheckoutPage() {
       });
       if (tx.ok) {
         setStep('confirmation');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleManualSubmit = async () => {
+    if (!proofFile || !listing) return;
+    setProcessing(true);
+
+    let secureProofUrl = proofUrl;
+    if (!secureProofUrl) {
+      const formData = new FormData();
+      formData.append('file', proofFile);
+      
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (uploadRes.ok) {
+        const { url } = await uploadRes.json();
+        secureProofUrl = url;
+        setProofUrl(url);
+      } else {
+        alert("Upload failed. Try again.");
+        setProcessing(false);
+        return;
+      }
+    }
+
+    try {
+      const tx = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sellerId: listing.sellerId,
+          listingId: listing.id,
+          priceIdr: listing.priceIdr,
+          buyerFeeIdr: fees.buyerFeeIdr,
+          totalIdr: totalIdr,
+          paymentGateway: 'manual',
+          paymentMethodType: 'bank_transfer_manual',
+          manualTransferProofUrl: secureProofUrl
+        })
+      });
+      if (tx.ok) {
+        setStep('confirmation');
+      } else {
+        alert("Transaction validation failed");
       }
     } catch (e) {
       console.error(e);
@@ -149,11 +208,11 @@ export default function CheckoutPage() {
     <div className="pb-32">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <button onClick={() => step !== 'review' ? setStep('review') : router.back()} className="p-1 text-gray-600">
+        <button onClick={() => step !== 'review' && step !== 'confirmation' ? setStep('review') : router.back()} className="p-1 text-gray-600">
           <ArrowLeft size={22} />
         </button>
         <h1 className="text-lg font-bold text-gray-900">
-          {step === 'review' ? 'Order Review' : step === 'offer' ? 'Make Offer' : 'Payment'}
+          {step === 'review' ? 'Order Review' : step === 'upload_proof' ? 'Confirm Payment' : step === 'offer' ? 'Make Offer' : 'Payment'}
         </h1>
       </div>
 
@@ -162,7 +221,7 @@ export default function CheckoutPage() {
         {['Review', 'Payment'].map((label, i) => (
           <div key={label} className="flex items-center gap-2">
             <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-              (step === 'review' && i === 0) || (step === 'payment' && i <= 1)
+              (step === 'review' && i === 0) || ((step === 'payment' || step === 'upload_proof') && i <= 1)
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-500'
             }`}>
@@ -300,9 +359,68 @@ export default function CheckoutPage() {
 
             <div className="flex items-center gap-2 text-xs text-gray-400 px-1">
               <Lock size={12} />
-              <span>Secured by {selectedGateway === 'midtrans' ? 'Midtrans' : selectedGateway === 'stripe' ? 'Stripe' : 'PayPal'}</span>
+              <span>Secured by {selectedGateway === 'manual' ? 'CardVault Escrow' : selectedGateway === 'midtrans' ? 'Midtrans' : selectedGateway === 'stripe' ? 'Stripe' : 'PayPal'}</span>
             </div>
           </>
+        )}
+
+        {step === 'upload_proof' && (
+          <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-5 animate-in slide-in-from-right">
+            <div>
+              <h3 className="text-gray-900 font-bold mb-1">Transfer Instructions</h3>
+              <p className="text-xs text-gray-500 mb-4">Please transfer the exact amount below to secure your transaction.</p>
+              
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center mb-4">
+                <p className="text-xs text-blue-600 font-medium tracking-widest uppercase mb-1">Transfer Exact Amount</p>
+                <p className="text-xl text-blue-900 font-black">{formatIDR(totalIdr)}</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-500">Bank</span>
+                  <span className="text-sm font-bold text-gray-900">BCA (Bank Central Asia)</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-500">Account Number</span>
+                  <span className="text-sm font-bold text-gray-900 font-mono tracking-wider">046 229 1109</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-500">Account Name</span>
+                  <span className="text-sm font-bold text-gray-900">PT CardVault Escrow Secure</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <h3 className="text-sm font-bold text-gray-900 mb-2">Upload Transfer Receipt</h3>
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  id="receipt-upload" 
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setProofFile(e.target.files[0]);
+                    }
+                  }}
+                />
+                <label htmlFor="receipt-upload" className="cursor-pointer">
+                  {proofFile ? (
+                    <div className="text-sm font-bold text-blue-600">{proofFile.name}</div>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                      </div>
+                      <span className="text-sm font-medium leading-none text-blue-600">Click to upload receipt</span>
+                      <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                    </>
+                  )}
+                </label>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -324,6 +442,31 @@ export default function CheckoutPage() {
                 <>
                   <Lock size={16} />
                   Pay {formatIDR(totalIdr)}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Fixed Submit Proof Button */}
+      {step === 'upload_proof' && (
+        <div className="fixed bottom-16 left-0 right-0 z-40 bg-white border-t border-gray-200 p-4">
+          <div className="max-w-lg mx-auto">
+            <button
+              onClick={handleManualSubmit}
+              disabled={!proofFile || processing}
+              className="w-full py-3.5 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {processing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                <>
+                  <Lock size={16} />
+                  Submit Payment Proof
                 </>
               )}
             </button>

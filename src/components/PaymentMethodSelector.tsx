@@ -11,14 +11,11 @@ interface PaymentMethod {
 }
 
 const indonesianMethods: PaymentMethod[] = [
-  { id: 'gopay', name: 'GoPay', icon: Smartphone, description: 'Pay with GoPay e-wallet', gateway: 'midtrans' },
-  { id: 'ovo', name: 'OVO', icon: Smartphone, description: 'Pay with OVO e-wallet', gateway: 'midtrans' },
-  { id: 'dana', name: 'DANA', icon: Smartphone, description: 'Pay with DANA e-wallet', gateway: 'midtrans' },
-  { id: 'shopeepay', name: 'ShopeePay', icon: Smartphone, description: 'Pay with ShopeePay', gateway: 'midtrans' },
-  { id: 'bank_transfer', name: 'Bank Transfer', icon: Building2, description: 'BCA, BNI, BRI, Mandiri', gateway: 'midtrans' },
-  { id: 'qris', name: 'QRIS', icon: QrCode, description: 'Scan QR to pay', gateway: 'midtrans' },
-  { id: 'convenience_store', name: 'Convenience Store', icon: Store, description: 'Alfamart, Indomaret', gateway: 'midtrans' },
-  { id: 'card_id', name: 'Credit/Debit Card', icon: CreditCard, description: 'Visa, Mastercard', gateway: 'midtrans' },
+  { id: 'bank_transfer_manual', name: 'Bank Transfer (Manual)', icon: Building2, description: 'BCA, BNI, BRI, Mandiri', gateway: 'manual' },
+  { id: 'gopay', name: 'GoPay', icon: Smartphone, description: 'Coming Soon', gateway: 'midtrans' },
+  { id: 'ovo', name: 'OVO', icon: Smartphone, description: 'Coming Soon', gateway: 'midtrans' },
+  { id: 'qris', name: 'QRIS', icon: QrCode, description: 'Coming Soon', gateway: 'midtrans' },
+  { id: 'card_id', name: 'Credit/Debit Card', icon: CreditCard, description: 'Coming Soon', gateway: 'midtrans' },
 ];
 
 const internationalMethods: PaymentMethod[] = [
@@ -46,18 +43,21 @@ export default function PaymentMethodSelector({ countryCode, selectedMethod, onS
           const Icon = method.icon;
           const isSelected = selectedMethod === method.id;
           return (
-            <button
-              key={method.id}
-              onClick={() => onSelect(method.id, method.gateway)}
-              className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all ${
-                isSelected
-                  ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-200 bg-white hover:border-gray-300'
-              }`}
-            >
-              <div className={`p-2 rounded-lg ${isSelected ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                <Icon size={20} className={isSelected ? 'text-blue-600' : 'text-gray-500'} />
-              </div>
+              <button
+                key={method.id}
+                onClick={() => method.id === 'bank_transfer_manual' ? onSelect(method.id, method.gateway) : null}
+                disabled={method.id !== 'bank_transfer_manual'}
+                className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all ${
+                  method.id !== 'bank_transfer_manual' 
+                     ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50' 
+                     : isSelected
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${(isSelected && method.id === 'bank_transfer_manual') ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                  <Icon size={20} className={(isSelected && method.id === 'bank_transfer_manual') ? 'text-blue-600' : 'text-gray-500'} />
+                </div>
               <div className="text-left">
                 <p className={`text-sm font-medium ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
                   {method.name}

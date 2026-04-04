@@ -15,6 +15,7 @@ interface Transaction {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+  manualTransferProofUrl?: string | null;
 }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -157,7 +158,19 @@ export default function AdminTransactionsPage() {
           {selected.paymentGateway && (
             <div className="p-4">
               <p className="text-xs text-slate-400 uppercase font-medium">Payment Gateway</p>
-              <p className="text-sm text-slate-900">{selected.paymentGateway}</p>
+              <div className="flex items-center justify-between">
+                 <p className="text-sm text-slate-900">{selected.paymentGateway}</p>
+                 {selected.manualTransferProofUrl && (
+                   <a 
+                     href={selected.manualTransferProofUrl} 
+                     target="_blank" 
+                     rel="noopener noreferrer" 
+                     className="text-xs px-3 py-1 bg-blue-50 text-blue-700 font-bold rounded-lg border border-blue-200"
+                   >
+                     View Receipt Proof ↗
+                   </a>
+                 )}
+              </div>
             </div>
           )}
         </div>
