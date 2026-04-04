@@ -16,13 +16,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
 
-  useEffect(() => {
-    if (!hydrated) return;
-    const isPublic = pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/gate');
-    if (!user && !isPublic && !isAdmin && !isGate) {
-      router.replace('/');
-    }
-  }, [user, pathname, isAdmin, isGate, router, hydrated]);
+
 
   useEffect(() => {
     // Service Worker currently deferred
@@ -52,10 +46,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  const isPublicRoute = pathname === '/' || pathname.startsWith('/auth') || pathname.startsWith('/gate');
-  if (!user && !isPublicRoute && !isAdmin && !isGate) {
-    return <div className="min-h-screen bg-slate-50" />; // Prevent flash of unauthorized content
-  }
+
 
   const isMarketingLanding = pathname === '/';
   const isAuthRoute = pathname.startsWith('/auth');
