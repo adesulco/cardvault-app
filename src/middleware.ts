@@ -135,35 +135,19 @@ export function middleware(request: NextRequest) {
     return buildResponse(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
-  if (
-    pathname === '/gate' ||
-    pathname.startsWith('/api/gate') ||
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon') ||
-    pathname.startsWith('/manifest')
-  ) {
-    return buildResponse(NextResponse.next({ request: { headers: requestHeaders } }));
+  // Gate is removed. Allow traffic to flow directly to Auth checks.
+  const isAuth = request.cookies.has('next-auth.session-token') || request.cookies.has('__Secure-next-auth.session-token') || request.cookies.has('cv_session_token');
+  const isPublic = pathname === '/' || pathname.startsWith('/auth');
+  const isStatic = pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.startsWith('/favicon') || pathname.startsWith('/manifest') || pathname.startsWith('/seed');
+
+  if (!isAuth && !isPublic && !isStatic) {
+     const url = request.nextUrl.clone();
+     url.pathname = '/auth/login';
+     url.searchParams.set('callbackUrl', request.nextUrl.pathname);
+     return buildResponse(NextResponse.redirect(url));
   }
-
-  const accessCookie = request.cookies.get(GATE_COOKIE_NAME);
-  if (accessCookie?.value === 'granted' || process.env.NODE_ENV !== 'production') {
-    const isAuth = request.cookies.has('next-auth.session-token') || request.cookies.has('__Secure-next-auth.session-token') || request.cookies.has('cv_session_token');
-    const isPublic = pathname === '/' || pathname.startsWith('/auth') || pathname === '/gate';
-    const isStatic = pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.startsWith('/favicon') || pathname.startsWith('/manifest') || pathname.startsWith('/seed');
-
-    if (!isAuth && !isPublic && !isStatic) {
-       const url = request.nextUrl.clone();
-       url.pathname = '/auth/login';
-       url.searchParams.set('callbackUrl', request.nextUrl.pathname);
-       return buildResponse(NextResponse.redirect(url));
-    }
-    return buildResponse(NextResponse.next({ request: { headers: requestHeaders } }));
-  }
-
-  const gateUrl = request.nextUrl.clone();
-  gateUrl.pathname = '/gate';
-  gateUrl.searchParams.set('next', pathname);
-  return buildResponse(NextResponse.redirect(gateUrl));
+  
+  return buildResponse(NextResponse.next({ request: { headers: requestHeaders } }));
 }
 
 export const config = {
