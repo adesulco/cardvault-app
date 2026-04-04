@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { useAppStore } from '@/lib/store';
 import { BadgeCheck, Globe, Lock, CheckCircle2 } from 'lucide-react';
 
+export const runtime = 'edge';
+
 export default function HomePage() {
   const user = useAppStore((state) => state.user);
 

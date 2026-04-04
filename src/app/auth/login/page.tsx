@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
@@ -17,6 +17,16 @@ export default function LoginPage() {
   const [kycStatus, setKycStatus] = useState<'PENDING' | 'APPROVED' | 'REJECTED' | null>(null);
   const { setUser } = useAppStore();
   const [kycReviewNote, setKycReviewNote] = useState('');
+
+  useEffect(() => {
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const oauthError = searchParams?.get('error');
+    if (oauthError === 'OAuthSignin' || oauthError === 'OAuthCallback') {
+      setError('Google Sign-in failed. Please try again or use email login.');
+    } else if (oauthError) {
+      setError('An authentication error occurred. Please try again.');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

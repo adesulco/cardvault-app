@@ -98,13 +98,25 @@ export function middleware(request: NextRequest) {
        }
     }
 
-    if (pathname === '/admin/dashboard' || pathname === '/admin/dashboard/') {
+    if (pathname === '/dashboard' || pathname === '/dashboard/' || pathname === '/admin/dashboard' || pathname === '/admin/dashboard/') {
       const url = request.nextUrl.clone();
       url.pathname = '/admin';
       return buildResponse(NextResponse.redirect(url));
     }
     
-    if (pathname === '/admin/promo-banners' || pathname === '/admin/promo-banners/') {
+    if (pathname === '/kyc-approvals' || pathname === '/admin/kyc-approvals' || pathname === '/admin/kyc-approvals/') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin/kyc';
+      return buildResponse(NextResponse.redirect(url));
+    }
+
+    if (pathname === '/featured-rails' || pathname === '/admin/featured-rails' || pathname === '/admin/featured-rails/') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin/featured';
+      return buildResponse(NextResponse.redirect(url));
+    }
+
+    if (pathname === '/admin/promo-banners' || pathname === '/admin/promo-banners/' || pathname === '/promo-banners') {
       const url = request.nextUrl.clone();
       url.pathname = '/admin/banners';
       return buildResponse(NextResponse.redirect(url));

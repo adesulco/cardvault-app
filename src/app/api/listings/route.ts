@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const isAuth = cookieStore.has('next-auth.session-token') || cookieStore.has('__Secure-next-auth.session-token') || cookieStore.has('cv_session_token');
+    
+    if (!isAuth) {
+      return NextResponse.json({ error: 'Unauthorized Access. Session required for marketplace telemetry.' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q');
     const sort = searchParams.get('sort');
